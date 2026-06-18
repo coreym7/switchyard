@@ -39,9 +39,9 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 
 - [x] Verify whether Codex CLI exposes a flag that suppresses loading of `AGENTS.md` (project + global). Current finding: no verified bypass flag; prompt isolation requires cwd/`CODEX_HOME` control or accepting ambient instructions.
 - [x] Verify Claude Code CLI flags that suppress loading of `CLAUDE.md` (project + global). Current finding: `--bare` plus `--system-prompt` / `--system-prompt-file` gives clean lane-prompt isolation.
-- [ ] Decide Codex prompt-isolation policy for Switchyard: controlled cwd/`CODEX_HOME` harness, accepted ambient `AGENTS.md`, or stop and ask the user when ambient instructions are detected.
-- [ ] If choosing controlled `CODEX_HOME`, test a Switchyard Codex home that preserves auth material but omits `AGENTS.md`.
-- [ ] If Codex isolation is required, update `scripts/phase-0-probe.py` to run an isolation-focused pass and capture findings side-by-side with the inherit-globals run.
+- [x] Decide Codex prompt-isolation policy for Switchyard: **use a Switchyard-managed `CODEX_HOME`** that carries `auth.json` from the real `CODEX_HOME` but contains no `AGENTS.md`. Run cwd (the run folder) also has no `AGENTS.md` in its ancestry.
+- [x] Test the managed-`CODEX_HOME` shape: copy `auth.json` from `~/.codex/`, omit everything else, run `codex exec` against it, confirm clean prompt and successful auth.
+- [x] If the managed-`CODEX_HOME` test passes, update `scripts/phase-0-probe.py` to add an isolation-focused pass and capture findings alongside the ambient run.
 - [x] Document the verified prompt-isolation findings in `design/switchyard_mvp_addendum.md` under the Prompting Principle section.
 
 ## Repo Setup (deferred from initial review)
