@@ -82,10 +82,12 @@ Create `greetings.py` in the project root with a single function `hello()` that 
 - Follow-up research found that Claude Code has clean prompt isolation flags: `--bare` plus `--system-prompt` or `--system-prompt-file` suppresses global/project `CLAUDE.md` loading while letting Switchyard provide the lane prompt explicitly.
 - Follow-up research found no equivalent Codex CLI flag to bypass `AGENTS.md`. OpenAI's current Codex agent-loop documentation describes global and project `AGENTS.md` aggregation as part of prompt construction.
 - Local follow-up using `codex debug prompt-input` confirmed model-visible `AGENTS.md` aggregation without a model call: markers from both `CODEX_HOME/AGENTS.md` and the working directory's `AGENTS.md` appeared in the rendered prompt.
+- Local follow-up using an empty alternate `CODEX_HOME` and a clean temp cwd removed the `AGENTS.md instructions` block from `codex debug prompt-input`.
+- A real `codex exec -o <artifact>` smoke with that empty alternate `CODEX_HOME` failed with `401 Unauthorized`, which confirms auth is tied to `CODEX_HOME` for this CLI path. The command reached the API path but had no bearer/basic auth available.
 
 ## Open items
 
 - Decide whether Switchyard treats Codex `AGENTS.md` content as accepted ambient context or attempts isolation by controlling `CODEX_HOME` and the Codex working directory.
-- If isolation is required, test the lowest-friction harness shape: controlled `CODEX_HOME`, no `AGENTS.md` in the run cwd ancestry, and explicit artifact/repo paths.
+- If isolation is required, test the lowest-friction harness shape: a Switchyard-controlled `CODEX_HOME` with auth material but no `AGENTS.md`, no `AGENTS.md` in the run cwd ancestry, and explicit artifact/repo paths.
 - Verify `codex exec -o <artifact>` locally: exact file contents, stdout duplication, stderr behavior, and exit code behavior.
 - Run `codex debug models` against the account catalog when model routing becomes relevant. The bundled catalog is useful, but not proof of account availability.

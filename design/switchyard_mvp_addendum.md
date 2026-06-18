@@ -467,6 +467,8 @@ claude -p --bare --system-prompt-file <lane-prompt-file> ...
 
 Codex does not currently have an equivalent verified `AGENTS.md` bypass flag. `codex exec --help` exposes `--ignore-user-config` for `$CODEX_HOME/config.toml` and `--ignore-rules` for execpolicy `.rules` files, but neither is documented as an `AGENTS.md` bypass. OpenAI's current Codex agent-loop documentation describes global and project `AGENTS.md` aggregation as part of prompt construction, and local `codex debug prompt-input` testing confirmed that marker text from both `CODEX_HOME/AGENTS.md` and the working directory's `AGENTS.md` appears in the model-visible prompt.
 
+An empty alternate `CODEX_HOME` plus a clean temp cwd removed the `AGENTS.md instructions` block from `codex debug prompt-input`, so home/cwd control is a plausible isolation route. A real `codex exec` smoke with that empty home failed with `401 Unauthorized`, which means a production isolation route would need a Switchyard-managed Codex home that has auth material but omits `AGENTS.md`.
+
 Phase 0 should therefore treat Codex prompt isolation as an explicit design decision:
 
 ```text

@@ -18,6 +18,8 @@ Re-capture this doc whenever the CLI is upgraded. Help output is the source of t
 - **`--ignore-rules`** — Don't load user or project execpolicy `.rules` files.
 - **No verified `AGENTS.md` bypass flag:** `codex exec --help` does not expose a flag that disables `AGENTS.md` loading. OpenAI's current agent-loop documentation describes global and project instruction aggregation as part of prompt construction, and the related GitHub feature request for a bypass flag is still open.
 - **Verified discovery behavior:** `codex debug prompt-input` can render the model-visible prompt without a model call. With marker files in `CODEX_HOME/AGENTS.md` and the working directory's `AGENTS.md`, the rendered prompt included both markers under an `AGENTS.md instructions` block.
+- **Verified alternate-home behavior:** pointing `CODEX_HOME` at an empty harness-owned directory and running from a clean temp cwd removed the `AGENTS.md instructions` block from `codex debug prompt-input`.
+- **Auth caveat:** an empty alternate `CODEX_HOME` also lacks Codex auth. A real `codex exec` smoke reached the API path but failed with `401 Unauthorized`, so an isolated Switchyard Codex home would need auth material copied, linked, or established separately while omitting `AGENTS.md`.
 - **Practical implication:** Switchyard cannot currently count on clean Codex prompt isolation from flags alone. The adapter should either run Codex from a directory tree with no `AGENTS.md` files up to the effective project root and a controlled `CODEX_HOME`, or treat user/global `AGENTS.md` content as accepted ambient context.
 - **Shadowing caveat:** A deeper empty or minimal `AGENTS.md` may override earlier guidance in model behavior, but it does not remove earlier loaded text from the prompt. Treat this as a behavior-management tactic, not true isolation.
 
@@ -78,7 +80,7 @@ The `-o` output file is the key adapter choice — it gives Codex a clean place 
 
 ## Outstanding probe-verifiable questions
 
-1. Can `codex exec` be made to ignore global `AGENTS.md` by pointing `CODEX_HOME` at a harness-owned directory with credentials/config managed separately?
+1. Can Switchyard safely create a Codex home that has auth material but no `AGENTS.md`? Empty alternate `CODEX_HOME` suppresses global instructions but fails real exec with `401 Unauthorized`.
 2. Can project `AGENTS.md` discovery be avoided reliably by running from a harness-owned non-repo directory while passing only explicit artifact paths, or does that break useful repo access?
 3. Does `-o` capture only the final message, or include any wrapper / formatting? Claude's follow-up research says it writes the final message and still prints it to stdout; verify in the local probe before adapter implementation.
 4. Does Codex's stdout in `--ephemeral` mode emit narration, banners, or tool-call traces that Switchyard should ignore when `-o` is present?
