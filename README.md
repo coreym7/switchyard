@@ -1,165 +1,77 @@
 # Switchyard
 
-Switchyard is a local orchestration harness for a disciplined multi-agent software development workflow.
+Switchyard is a local Python CLI that makes an existing Claude Code + Codex
+handoff workflow executable: one command advances the right agent through the
+right step, writes durable artifacts, and stops at defined gates. It does not
+invent a new SDLC or run an uncontrolled agent swarm.
 
-The project goal is not to invent a new SDLC or create an uncontrolled agent swarm. The goal is to make an existing Claude Code and Codex handoff workflow executable: one tool advances the right agent through the right step, writes durable artifacts, preserves review boundaries, and stops at defined safety gates.
+## Quick Start
 
-In short:
+### 1. Prerequisites
 
-```text
-User defines the problem.
-Switchyard advances the workflow.
-Codex and Claude produce/review artifacts.
-The human approves important transitions.
-```
+- **Python 3.13+** (`python --version`)
+- **Node.js (LTS)** — both agent CLIs ship via npm (`node --version`)
+- **Codex CLI** — `npm install -g @openai/codex`, then `codex login`
+- **Claude Code CLI** — `npm install -g @anthropic-ai/claude-code`, then `claude login`
 
-## What This Is
-
-Switchyard is intended to become a local Python CLI that coordinates agent lanes through:
-
-- structured task packets
-- role-specific prompts
-- shared handoff files
-- explicit workflow states
-- bounded review loops
-- git boundaries
-- test and diff capture
-- final human approval
-
-Two lanes, with roles that differ by phase:
-
-- **Planning (implemented):** **Claude** authors and refines the plan; **Codex**
-  reviews it against the repo and owns the approve/revise/block decision.
-- **Implementation (future, Phase 3+):** **Codex** implements the approved plan;
-  **Claude** reviews the diff.
-
-## Setup
-
-Switchyard shells out to the Codex and Claude Code CLIs, so both must be installed and authorized on your machine before anything in this repo will run end-to-end.
-
-### Prerequisites
-
-- **Python 3.13+** — required by `pyproject.toml`. Verify with `python --version`.
-- **Node.js (LTS)** — needed only because both CLIs are distributed via `npm`. Verify with `node --version`.
-- **Codex CLI** — installed standalone via npm:
-  ```text
-  npm install -g @openai/codex
-  ```
-  Verify with `codex --version`.
-- **Claude Code CLI** — installed standalone via npm:
-  ```text
-  npm install -g @anthropic-ai/claude-code
-  ```
-  Verify with `claude --version`.
-
-The VS Code extensions for Codex and Claude Code are separate from the standalone CLIs. Installing the extension does not install the CLI; Switchyard uses the standalone CLIs.
-
-### Authorize each CLI once
-
-Both CLIs use OAuth and store credentials in your home directory (`~/.codex/`, `~/.claude/`). Authorize each once, then Switchyard inherits the session for every subsequent run:
-
-- Codex: `codex login`
-- Claude Code: `claude login` (or run `claude` once interactively; first-run flow handles it)
-
-Confirm both are working non-interactively before running anything in this repo:
+The standalone CLIs are separate from the VS Code extensions; Switchyard shells
+out to the CLIs. Confirm both run non-interactively before using Switchyard:
 
 ```text
 codex exec "say hi"
 claude -p "say hi"
 ```
 
-If either drops you into a browser or prompts for credentials, complete that flow once and re-run the smoke test.
+### 2. Install
 
-### Install Switchyard locally
-
-Install the local CLI from the repo root:
+From the repo root:
 
 ```text
 pip install -e .
 ```
 
-That registers the `switchyard` command for local testing.
+This registers the `switchyard` command on your PATH. The install is **editable**,
+so changes to the source take effect immediately — you only re-run this on a new
+machine or virtualenv.
 
-## Current Status
-
-Two things are implemented and verified: the **Phase 0 adapter spike** and the
-**bounded planning loop** (Phases 1 + 2a + 2b).
-
-### Planning loop (implemented)
+### 3. Run it in any repo
 
 ```text
-switchyard run "<task>" [--repo <target-repo>] [--max-rounds N]
+cd <target-repo>
+switchyard run "<task>"
 ```
 
-Runs the bounded loop: task packet → Claude authors a plan → Codex reviews it
-against the repo and decides → on `needs_revision`, Claude refines and Codex
-reviews again → until Codex approves, blocks, or the round limit is hit. It
-produces exactly one terminal artifact — `final-plan.md` (approved) or
-`blocked-report.md` (blocked / max rounds) — writes `metadata.json` (state
-machine), and mirrors current artifacts into `.switchyard/handoff/active/`. It
-stops at the approved plan; it does **not** implement (that is Phase 3).
+- The current directory is the target repo by default; use `--repo <path>` to
+  point at a repo from elsewhere.
+- Cap review rounds with `--max-rounds N` (default 3).
+- Artifacts are written under the target repo's `.switchyard/` directory —
+  **add `.switchyard/` to that repo's `.gitignore`** if you don't want them tracked.
+- The run stops at a finished plan (`final-plan.md`) or a `blocked-report.md`.
+  It does **not** modify code, run tests, or commit.
 
-Live-verified 2026-06-18 against `c:\dev\agentic test area`: a scoped task ran a
-real 2-round `needs_revision`→`approved` cycle; an ambiguous task terminated
-`blocked`. 75 unit tests pass.
+## What Switchyard Does
 
-### Phase 0 adapter spike
-
-The first build target was **Phase 0: Adapter Spike**. That phase confirms and refines the documented CLI automation path:
+`switchyard run` executes a bounded planning loop:
 
 ```text
 task packet
-  ->
-Codex CLI drafts a plan
-  ->
-Switchyard captures the Codex artifact
-  ->
-Claude CLI reviews/refines the artifact
-  ->
-Switchyard captures the Claude artifact
-  ->
-stop
+  -> Claude authors a plan
+  -> Codex reviews it against the repo and decides (approved / needs_revision / blocked)
+       needs_revision -> Claude refines -> Codex reviews again
+  -> until approved, blocked, or max rounds
+  -> final-plan.md (approved) or blocked-report.md
 ```
 
-Phase 0 is not production workflow orchestration yet. It is the adapter proof:
-lock down command shape, prompt transport, output handling, failure behavior,
-and the artifact contract Switchyard should depend on.
+Roles differ by phase:
 
-The latest verified run on 2026-05-04 against `c:\dev\project-profitability`
-confirmed:
+- **Planning (implemented):** Claude authors and refines the plan; Codex reviews
+  it against the repo and owns the approve/revise/block decision.
+- **Implementation (future, Phase 3+):** Codex implements the approved plan;
+  Claude reviews the diff.
 
-- Codex writes a concrete read-only plan artifact through `codex exec -` and `-o`.
-- The Codex plan referenced the actual `package.json` script `test` running `jest`.
-- Claude wrote a review artifact with a `## Decision` section using the user's existing OAuth login.
-- `adapter-notes.md` reported both lanes succeeded.
-
-## Documentation Map
-
-- [design/switchyard_mvp_addendum.md](design/switchyard_mvp_addendum.md) narrows the MVP into phases and defines the Phase 0 adapter spike.
-- [design/implementation_skeleton.md](design/implementation_skeleton.md) names the initial package skeleton for the Phase 0 implementation.
-- [design/active-checklist.md](design/active-checklist.md) tracks the current implementation queue.
-- [design/reference/task-packet.md](design/reference/task-packet.md), [design/reference/run-artifacts.md](design/reference/run-artifacts.md), [design/reference/workflow-states.md](design/reference/workflow-states.md), [design/reference/configuration.md](design/reference/configuration.md), and [design/reference/guardrails-and-reporting.md](design/reference/guardrails-and-reporting.md) hold durable workflow reference details extracted from the original design draft.
-- [design/reference/cli/codex-cli-reference.md](design/reference/cli/codex-cli-reference.md) and [design/reference/cli/claude-cli-reference.md](design/reference/cli/claude-cli-reference.md) capture CLI reference findings relevant to Switchyard.
-- [design/phase-0-cli-probe-findings.md](design/phase-0-cli-probe-findings.md) records Phase 0 adapter probe results.
-- [design/archive/switchyard_design_draft.md](design/archive/switchyard_design_draft.md) preserves the original source design draft for historical context.
-- [design/manual-instructions/codex-instructions-reference.md](design/manual-instructions/codex-instructions-reference.md) preserves the manual Codex implementation-agent rules.
-- [design/manual-instructions/claude-instructions-reference.md](design/manual-instructions/claude-instructions-reference.md) preserves the manual Claude planning and verification rules.
-
-## Design Principle
-
-Switchyard should keep the core boring and reliable:
-
-```text
-files as source of truth
-metadata as workflow state
-agent lanes behind adapters
-bounded loops
-explicit stop conditions
-git as containment
-human approval for risky transitions
-```
-
-That stable core can later support API-token adapters, concurrent runs, dashboards, queues, PR automation, cost-aware model routing, or additional model lanes without discarding the initial CLI work.
+Files are the source of truth: the full audit trail is
+`.switchyard/runs/<run-id>/`, and the latest artifacts are mirrored to
+`.switchyard/handoff/active/` (cleared at the start of each run).
 
 ## Commands
 
@@ -179,7 +91,7 @@ switchyard run "<task>" [--repo <target-repo>] [--max-rounds N]
 Adapter spike (Phase 0 probe):
 
 ```text
-switchyard spike-adapters "problem statement"
+switchyard spike-adapters "<problem statement>"
   -> runs/<run-id>/
        00-task-packet.md
        01-codex-plan.md
@@ -187,7 +99,40 @@ switchyard spike-adapters "problem statement"
        adapter-notes.md
 ```
 
-Neither command implements code, runs tests, commits, pushes, or opens PRs. The
-next build target is **Phase 3: implementation** — Codex implements an approved
-`final-plan.md` on a Switchyard branch with a git boundary and test execution,
-followed by **Phase 4: Claude final diff review**.
+Neither command implements code, runs tests, commits, pushes, or opens PRs.
+
+## Current Status
+
+Implemented and verified: the **Phase 0 adapter spike** and the **bounded
+planning loop** (Phases 1 + 2a + 2b). The next build target is **Phase 3** —
+Codex implements an approved `final-plan.md` on a Switchyard branch with a git
+boundary and test execution — followed by **Phase 4**, Claude final diff review.
+
+## Documentation Map
+
+- [design/switchyard_mvp_addendum.md](design/switchyard_mvp_addendum.md) narrows the MVP into phases and holds the ratified loop model.
+- [design/active-checklist.md](design/active-checklist.md) tracks the current implementation queue and next work.
+- [design/implementation_skeleton.md](design/implementation_skeleton.md) records the initial Phase 0 package skeleton.
+- [design/reference/task-packet.md](design/reference/task-packet.md), [design/reference/run-artifacts.md](design/reference/run-artifacts.md), [design/reference/workflow-states.md](design/reference/workflow-states.md), [design/reference/configuration.md](design/reference/configuration.md), and [design/reference/guardrails-and-reporting.md](design/reference/guardrails-and-reporting.md) hold durable workflow reference details.
+- [design/reference/cli/codex-cli-reference.md](design/reference/cli/codex-cli-reference.md) and [design/reference/cli/claude-cli-reference.md](design/reference/cli/claude-cli-reference.md) capture CLI reference findings.
+- [design/phase-0-cli-probe-findings.md](design/phase-0-cli-probe-findings.md) records Phase 0 adapter probe results.
+- [design/archive/switchyard_design_draft.md](design/archive/switchyard_design_draft.md) preserves the original source design draft.
+- [design/manual-instructions/codex-instructions-reference.md](design/manual-instructions/codex-instructions-reference.md) and [design/manual-instructions/claude-instructions-reference.md](design/manual-instructions/claude-instructions-reference.md) preserve the manual agent rules.
+
+## Design Principle
+
+Switchyard keeps the core boring and reliable:
+
+```text
+files as source of truth
+metadata as workflow state
+agent lanes behind adapters
+bounded loops
+explicit stop conditions
+git as containment
+human approval for risky transitions
+```
+
+That stable core can later support API-token adapters, concurrent runs,
+dashboards, PR automation, or additional model lanes without discarding the
+initial CLI work.
