@@ -6,9 +6,9 @@ import argparse
 import sys
 from pathlib import Path
 
-from switchyard.artifacts import ADAPTER_NOTES_FILENAME, write_artifact
 from switchyard.run_context import create_run_context
 from switchyard.task_packet import write_task_packet
+from switchyard.workflows.adapter_spike import run_adapter_spike
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -28,25 +28,8 @@ def main(argv: list[str] | None = None) -> int:
         target_repo = Path.cwd().resolve()
         run_context = create_run_context(args.task, target_repo)
         write_task_packet(run_context, args.task)
-        write_artifact(
-            run_context.run_folder,
-            ADAPTER_NOTES_FILENAME,
-            _phase_0a_adapter_notes_stub(),
-        )
+        run_adapter_spike(run_context, args.task)
         print(run_context.run_folder)
         return 0
 
     return 2
-
-
-def _phase_0a_adapter_notes_stub() -> str:
-    """Render the Phase 0a adapter notes placeholder."""
-    return "\n".join(
-        [
-            "# Adapter Notes",
-            "",
-            "Phase 0a created the initial run artifacts only.",
-            "No Codex or Claude adapters were invoked.",
-            "",
-        ]
-    )
