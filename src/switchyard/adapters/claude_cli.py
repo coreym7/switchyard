@@ -42,11 +42,10 @@ def run_claude_review(
         "haiku",
         "--max-budget-usd",
         "0.10",
-        prompt_argument,
     ]
 
     try:
-        result = process.run_subprocess(cmd, cwd=run_folder)
+        result = process.run_subprocess(cmd, cwd=run_folder, input=prompt_argument)
     finally:
         system_prompt_path.unlink(missing_ok=True)
 

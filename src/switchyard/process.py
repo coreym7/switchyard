@@ -39,15 +39,19 @@ def run_subprocess(
     cmd: list[str],
     cwd: Path,
     env: dict[str, str] | None = None,
+    input: str | None = None,
 ) -> SubprocessResult:
-    """Run a subprocess with standard adapter capture and failure handling."""
+    """Run a subprocess with standard adapter capture and optional stdin input."""
     try:
         result = subprocess.run(
             cmd,
             cwd=cwd,
             env=env,
+            input=input,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=ADAPTER_TIMEOUT_SECONDS,
             check=False,
         )

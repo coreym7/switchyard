@@ -50,8 +50,8 @@ def test_run_codex_plan_passes_managed_codex_home_without_mutating_env(
     task_packet.write_text("packet", encoding="utf-8")
     calls = []
 
-    def fake_run_subprocess(cmd, cwd, env=None):
-        calls.append({"cmd": cmd, "cwd": cwd, "env": env})
+    def fake_run_subprocess(cmd, cwd, env=None, input=None):
+        calls.append({"cmd": cmd, "cwd": cwd, "env": env, "input": input})
         (run_folder / CODEX_PLAN_FILENAME).write_text("plan", encoding="utf-8")
         return process.SubprocessResult(0, "stdout", "stderr", False, None)
 
@@ -62,6 +62,7 @@ def test_run_codex_plan_passes_managed_codex_home_without_mutating_env(
 
     assert result.success is True
     assert calls[0]["env"]["CODEX_HOME"] == str(run_folder / "codex-home")
+    assert calls[0]["input"] == "codex prompt\n\n<task-packet>\npacket\n</task-packet>"
     assert os.environ["CODEX_HOME"] != str(run_folder / "codex-home")
 
 
@@ -73,7 +74,7 @@ def test_run_codex_plan_command_includes_required_flags_and_output(tmp_path, mon
     task_packet.write_text("packet", encoding="utf-8")
     captured_cmd = []
 
-    def fake_run_subprocess(cmd, cwd, env=None):
+    def fake_run_subprocess(cmd, cwd, env=None, input=None):
         captured_cmd.extend(cmd)
         (run_folder / CODEX_PLAN_FILENAME).write_text("plan", encoding="utf-8")
         return process.SubprocessResult(0, "", "", False, None)
@@ -91,6 +92,9 @@ def test_run_codex_plan_command_includes_required_flags_and_output(tmp_path, mon
     assert captured_cmd[captured_cmd.index("-o") + 1] == str(
         run_folder / CODEX_PLAN_FILENAME
     )
+    assert captured_cmd[-1] == "-"
+    assert "codex prompt" not in captured_cmd
+    assert "packet" not in captured_cmd
 
 
 def test_run_codex_plan_fails_when_output_artifact_missing(tmp_path, monkeypatch):
@@ -103,7 +107,13 @@ def test_run_codex_plan_fails_when_output_artifact_missing(tmp_path, monkeypatch
     monkeypatch.setattr(
         process,
         "run_subprocess",
-        lambda cmd, cwd, env=None: process.SubprocessResult(0, "", "", False, None),
+        lambda cmd, cwd, env=None, input=None: process.SubprocessResult(
+            0,
+            "",
+            "",
+            False,
+            None,
+        ),
     )
 
     result = run_codex_plan(task_packet, run_folder, tmp_path)
@@ -122,7 +132,13 @@ def test_run_codex_plan_preserves_non_zero_exit(tmp_path, monkeypatch):
     monkeypatch.setattr(
         process,
         "run_subprocess",
-        lambda cmd, cwd, env=None: process.SubprocessResult(7, "", "bad", False, None),
+        lambda cmd, cwd, env=None, input=None: process.SubprocessResult(
+            7,
+            "",
+            "bad",
+            False,
+            None,
+        ),
     )
 
     result = run_codex_plan(task_packet, run_folder, tmp_path)
@@ -141,7 +157,7 @@ def test_run_codex_plan_fails_before_subprocess_when_auth_missing(tmp_path, monk
     monkeypatch.setenv("CODEX_HOME", str(codex_home))
     monkeypatch.setattr(process, "resolve_executable", lambda name: "codex.cmd")
 
-    def fail_run_subprocess(cmd, cwd, env=None):
+    def fail_run_subprocess(cmd, cwd, env=None, input=None):
         raise AssertionError("subprocess should not run")
 
     monkeypatch.setattr(process, "run_subprocess", fail_run_subprocess)
@@ -175,7 +191,13 @@ def test_run_codex_plan_preserves_timeout(tmp_path, monkeypatch):
     monkeypatch.setattr(
         process,
         "run_subprocess",
-        lambda cmd, cwd, env=None: process.SubprocessResult(None, "", "", True, None),
+        lambda cmd, cwd, env=None, input=None: process.SubprocessResult(
+            None,
+            "",
+            "",
+            True,
+            None,
+        ),
     )
 
     result = run_codex_plan(task_packet, run_folder, tmp_path)
@@ -195,9 +217,11 @@ def test_run_claude_review_command_embeds_artifacts_and_required_flags(
     task_packet.write_text("task packet body", encoding="utf-8")
     codex_plan.write_text("codex plan body", encoding="utf-8")
     captured_cmd = []
+    captured_input = []
 
-    def fake_run_subprocess(cmd, cwd, env=None):
+    def fake_run_subprocess(cmd, cwd, env=None, input=None):
         captured_cmd.extend(cmd)
+        captured_input.append(input)
         return process.SubprocessResult(0, "review", "", False, None)
 
     monkeypatch.setattr(process, "resolve_executable", lambda name: "claude.cmd")
@@ -210,8 +234,10 @@ def test_run_claude_review_command_embeds_artifacts_and_required_flags(
     assert captured_cmd[captured_cmd.index("--tools") + 1] == ""
     assert captured_cmd[captured_cmd.index("--model") + 1] == "haiku"
     assert "--max-budget-usd" in captured_cmd
-    assert "task packet body" in captured_cmd[-1]
-    assert "codex plan body" in captured_cmd[-1]
+    assert "task packet body" not in captured_cmd
+    assert "codex plan body" not in captured_cmd
+    assert "task packet body" in captured_input[0]
+    assert "codex plan body" in captured_input[0]
 
 
 def test_run_claude_review_writes_stdout_to_artifact(tmp_path, monkeypatch):
@@ -225,7 +251,13 @@ def test_run_claude_review_writes_stdout_to_artifact(tmp_path, monkeypatch):
     monkeypatch.setattr(
         process,
         "run_subprocess",
-        lambda cmd, cwd, env=None: process.SubprocessResult(0, "review", "", False, None),
+        lambda cmd, cwd, env=None, input=None: process.SubprocessResult(
+            0,
+            "review",
+            "",
+            False,
+            None,
+        ),
     )
 
     result = run_claude_review(task_packet, codex_plan, run_folder)
@@ -245,7 +277,13 @@ def test_run_claude_review_preserves_non_zero_exit(tmp_path, monkeypatch):
     monkeypatch.setattr(
         process,
         "run_subprocess",
-        lambda cmd, cwd, env=None: process.SubprocessResult(9, "", "bad", False, None),
+        lambda cmd, cwd, env=None, input=None: process.SubprocessResult(
+            9,
+            "",
+            "bad",
+            False,
+            None,
+        ),
     )
 
     result = run_claude_review(task_packet, codex_plan, run_folder)
@@ -266,6 +304,38 @@ def test_run_subprocess_reports_timeout(tmp_path, monkeypatch):
     assert result.exit_code is None
     assert result.stdout == "partial"
     assert result.stderr == "late"
+
+
+def test_run_subprocess_passes_utf8_decoding_and_input(tmp_path, monkeypatch):
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append({"args": args, "kwargs": kwargs})
+        return subprocess.CompletedProcess(args[0], 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(process.subprocess, "run", fake_run)
+
+    result = process.run_subprocess(["example"], tmp_path, input="hello")
+
+    assert result.success is True
+    assert calls[0]["kwargs"]["input"] == "hello"
+    assert calls[0]["kwargs"]["encoding"] == "utf-8"
+    assert calls[0]["kwargs"]["errors"] == "replace"
+
+
+def test_run_subprocess_passes_none_input_when_omitted(tmp_path, monkeypatch):
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append({"args": args, "kwargs": kwargs})
+        return subprocess.CompletedProcess(args[0], 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(process.subprocess, "run", fake_run)
+
+    result = process.run_subprocess(["example"], tmp_path)
+
+    assert result.success is True
+    assert calls[0]["kwargs"]["input"] is None
 
 
 def test_run_subprocess_reports_launch_error(tmp_path, monkeypatch):

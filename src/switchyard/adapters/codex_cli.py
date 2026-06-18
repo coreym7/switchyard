@@ -52,10 +52,10 @@ def run_codex_plan(
         str(target_repo),
         "-o",
         str(artifact_path),
-        full_prompt,
+        "-",
     ]
 
-    result = process.run_subprocess(cmd, cwd=run_folder, env=env)
+    result = process.run_subprocess(cmd, cwd=run_folder, env=env, input=full_prompt)
     if result.timed_out or result.launch_error:
         return LaneResult(
             success=False,
