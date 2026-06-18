@@ -453,6 +453,30 @@ The harness owns workflow state.
 
 The agents own the current artifact.
 
+### Prompt Isolation
+
+Switchyard should provide each lane prompt explicitly, but CLI-level isolation differs by adapter.
+
+Claude Code has a clean isolation path for the planning/review lanes:
+
+```text
+claude -p --bare --system-prompt-file <lane-prompt-file> ...
+```
+
+`--bare` suppresses global and project `CLAUDE.md` auto-discovery. The `--system-prompt` / `--system-prompt-file` option then supplies the lane prompt directly.
+
+Codex does not currently have an equivalent verified `AGENTS.md` bypass flag. `codex exec --help` exposes `--ignore-user-config` for `$CODEX_HOME/config.toml` and `--ignore-rules` for execpolicy `.rules` files, but neither is documented as an `AGENTS.md` bypass. OpenAI's current Codex agent-loop documentation describes global and project `AGENTS.md` aggregation as part of prompt construction, and local `codex debug prompt-input` testing confirmed that marker text from both `CODEX_HOME/AGENTS.md` and the working directory's `AGENTS.md` appears in the model-visible prompt.
+
+Phase 0 should therefore treat Codex prompt isolation as an explicit design decision:
+
+```text
+Option A: accept user/global AGENTS.md as ambient context and record it as a known adapter constraint.
+Option B: run Codex from a harness-owned directory tree with no AGENTS.md in its ancestry and a controlled CODEX_HOME.
+Option C: detect ambient AGENTS.md files and stop for user approval before invoking Codex.
+```
+
+Until that decision is made, the Codex adapter command shape is provisional.
+
 ---
 
 ## Adapter Reliability Questions

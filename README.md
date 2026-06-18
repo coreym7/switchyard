@@ -31,6 +31,47 @@ The early design focuses on two lanes:
 - **Codex** as the implementation-planning and execution lane
 - **Claude Code** as the refinement, architecture-review, and verification lane
 
+## Setup
+
+Switchyard shells out to the Codex and Claude Code CLIs, so both must be installed and authorized on your machine before anything in this repo will run end-to-end.
+
+### Prerequisites
+
+- **Python 3.13+** — required by `pyproject.toml`. Verify with `python --version`.
+- **Node.js (LTS)** — needed only because both CLIs are distributed via `npm`. Verify with `node --version`.
+- **Codex CLI** — installed standalone via npm:
+  ```text
+  npm install -g @openai/codex
+  ```
+  Verify with `codex --version`.
+- **Claude Code CLI** — installed standalone via npm:
+  ```text
+  npm install -g @anthropic-ai/claude-code
+  ```
+  Verify with `claude --version`.
+
+The VS Code extensions for Codex and Claude Code are separate from the standalone CLIs. Installing the extension does not install the CLI; Switchyard uses the standalone CLIs.
+
+### Authorize each CLI once
+
+Both CLIs use OAuth and store credentials in your home directory (`~/.codex/`, `~/.claude/`). Authorize each once, then Switchyard inherits the session for every subsequent run:
+
+- Codex: `codex login`
+- Claude Code: `claude login` (or run `claude` once interactively; first-run flow handles it)
+
+Confirm both are working non-interactively before running anything in this repo:
+
+```text
+codex exec "say hi"
+claude -p "say hi"
+```
+
+If either drops you into a browser or prompts for credentials, complete that flow once and re-run the smoke test.
+
+### Install Switchyard locally
+
+This repo is currently a scaffold — there is no installable CLI yet. Once Phase 0 is implemented, `pip install -e .` from the repo root will register the `switchyard` command.
+
 ## Current Status
 
 This repository currently contains design and scoping documents only. No production implementation exists yet.
