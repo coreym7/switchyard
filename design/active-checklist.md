@@ -4,27 +4,29 @@ This file tracks deferred and next-up work for Switchyard.
 
 ## Current Focus
 
-Phase 1 / Phase 2 planning loop design.
+Phase 3 — implementation lane (after ratifying the loop role model).
 
 Current state:
 
 ```text
-Phase 0 adapter spike is proven:
-task packet -> Codex plan -> Claude review -> adapter notes -> stop
+Phases 1 + 2a + 2b BUILT and live-verified (2026-06-18, uncommitted):
+  switchyard run "<task>" [--repo PATH] [--max-rounds N]
+  task packet -> Codex plan -> [Claude refine -> Codex critique/gate] loop
+    -> final-plan.md (approved) | blocked-report.md (blocked / max rounds)
+  metadata.json state machine + .switchyard/handoff/active/ mirroring
+  74 unit tests pass; live approve + blocked runs confirmed
 ```
 
-The next product step is to turn the proven adapter path into a real planning
-workflow: formalize the Codex handoff artifact, have Claude review it, let
-Codex revise it, and stop only when the plan is implementation-ready, blocked,
-or the bounded review loop reaches its limit.
+Loop role model RATIFIED (2026-06-18): Claude authors + refines the plan; Codex
+reviews against the repo and owns the `## Decision` gate; loop until Codex
+approves. Nit-folding hardening added (round context passed to Codex review).
 
-Recommended next session:
+Next:
 
-1. Draft a Phase 1 handoff for the one-pass planning artifact contract.
-2. Decide the decision format for Claude plan review (`approved`,
-   `needs_revision`, `blocked`) and where Switchyard stores that state.
-3. Draft Phase 2a/2b loop design only after the Phase 1 artifact contract is
-   clear.
+1. Optionally hand `claude_plan.md` / `claude_plan_refine.md` / `codex_review.md`
+   prompt wording to Codex for quality tuning.
+2. Phase 3: Codex implements the approved final plan on a Switchyard branch with
+   git boundary + test execution; Phase 4 adds Claude final diff review.
 
 ## Last Verified Commit
 
@@ -42,18 +44,22 @@ Verified on 2026-05-04:
 
 ## Next Work Breakdown
 
-- [ ] Phase 1: define the one-pass planning handoff artifact contract.
-- [ ] Phase 1: update prompts so Codex emits that contract consistently.
-- [ ] Phase 1: add artifact-reading helpers if the workflow needs to inspect
-  prior lane outputs as files rather than paths.
-- [ ] Phase 1: run the one-pass planning path against `agentic test area`.
-- [ ] Phase 2a: define Claude plan-review decision schema and artifact shape.
-- [ ] Phase 2a: teach Switchyard to parse or preserve Claude's review decision.
-- [ ] Phase 2b: design bounded revision loop stop conditions: approved,
-  blocked, max attempts, or missing artifacts.
-- [ ] Phase 2b: add loop artifacts and notes so every revision round is durable.
-- [ ] Phase 2b: verify the loop against a simple task and an intentionally
-  ambiguous task in `agentic test area`.
+- [x] Phase 1: define the one-pass planning handoff artifact contract (`plan_handoff.py`, task packet w/ target repo).
+- [x] Phase 1: planning task packet + `switchyard run` CLI.
+- [x] Phase 1: run the one-pass planning path against `agentic test area`.
+- [x] Phase 2a: Codex critique lane + Claude refine lane + prompts.
+- [x] Phase 2a: parse the critique decision (`decision.py`, `## Decision` trailer).
+- [x] Phase 2b: bounded loop stop conditions — approved, blocked, max rounds, lane failure, unparseable decision.
+- [x] Phase 2b: round-numbered durable artifacts + metadata state per transition.
+- [x] Phase 2b: verified against a scoped task (approved) and an ambiguous task (blocked) in `agentic test area`.
+- [x] Ratify loop role model: Claude authors/refines, Codex reviews/gates (user-confirmed).
+- [x] Nit-folding hardening: round context to Codex review; approve-with-discretion on late rounds.
+- [x] Clear active handoff dir at run start (`handoff.clear_active`).
+- [x] Remove superseded `plan_handoff.py` one-pass (loop supersedes it).
+- [ ] Refine `claude_plan.md` / `claude_plan_refine.md` / `codex_review.md` prompts (candidate Codex handoff).
+- [ ] Commit the Phase 1/2 work once reviewed.
+- [ ] Phase 3: implementation lane (git branch, test execution).
+- [ ] Phase 4: Claude final diff review.
 
 ## Phase 0 Checklist
 

@@ -1,4 +1,4 @@
-"""Codex CLI adapter for Phase 0 plan drafting."""
+"""Codex CLI adapter for planning and critique lanes."""
 
 from __future__ import annotations
 
@@ -16,14 +16,60 @@ def run_codex_plan(
     task_packet_path: Path,
     run_folder: Path,
     target_repo: Path,
+    artifact_name: str = CODEX_PLAN_FILENAME,
 ) -> LaneResult:
     """Invoke Codex to draft a plan and write the plan artifact via `-o`."""
+    prompt_text = _load_prompt_text("codex_plan.md")
+    task_packet_content = task_packet_path.read_text(encoding="utf-8")
+    full_prompt = "\n\n".join(
+        [
+            prompt_text,
+            _block("task-packet", task_packet_content),
+        ]
+    )
+    return _run_codex_exec(full_prompt, run_folder, target_repo, artifact_name)
+
+
+def run_codex_review(
+    task_packet_path: Path,
+    plan_path: Path,
+    run_folder: Path,
+    target_repo: Path,
+    artifact_name: str,
+    round_num: int,
+    max_rounds: int,
+) -> LaneResult:
+    """Invoke Codex to review Claude's plan and gate the loop with a decision.
+
+    ``round_num``/``max_rounds`` are passed to Codex so it can fold nit-level
+    findings into an approval on the final rounds rather than spending the loop's
+    last round bouncing minor issues.
+    """
+    prompt_text = _load_prompt_text("codex_review.md")
+    review_context = (
+        f"This is review round {round_num} of at most {max_rounds}."
+    )
+    full_prompt = "\n\n".join(
+        [
+            prompt_text,
+            _block("review-context", review_context),
+            _block("task-packet", task_packet_path.read_text(encoding="utf-8")),
+            _block("plan", plan_path.read_text(encoding="utf-8")),
+        ]
+    )
+    return _run_codex_exec(full_prompt, run_folder, target_repo, artifact_name)
+
+
+def _run_codex_exec(
+    full_prompt: str,
+    run_folder: Path,
+    target_repo: Path,
+    artifact_name: str,
+) -> LaneResult:
+    """Run `codex exec` with Switchyard isolation and capture the `-o` artifact."""
     codex_exe = process.resolve_executable("codex")
     if codex_exe is None:
-        return LaneResult(
-            success=False,
-            launch_error="codex not found on PATH",
-        )
+        return LaneResult(success=False, launch_error="codex not found on PATH")
 
     managed_codex_home = run_folder / "codex-home"
     managed_codex_home.mkdir(exist_ok=True)
@@ -31,11 +77,7 @@ def run_codex_plan(
     if auth_result is not None:
         return auth_result
 
-    prompt_text = _load_prompt_text("codex_plan.md")
-    task_packet_content = task_packet_path.read_text(encoding="utf-8")
-    full_prompt = _build_codex_prompt(prompt_text, task_packet_content)
-    artifact_path = run_folder / CODEX_PLAN_FILENAME
-
+    artifact_path = run_folder / artifact_name
     env = os.environ.copy()
     env["CODEX_HOME"] = str(managed_codex_home)
     cmd = [
@@ -43,6 +85,7 @@ def run_codex_plan(
         "exec",
         "--ignore-user-config",
         "--ignore-rules",
+        "--skip-git-repo-check",
         "--sandbox",
         "read-only",
         "--ephemeral",
@@ -115,9 +158,6 @@ def _load_prompt_text(prompt_name: str) -> str:
     )
 
 
-def _build_codex_prompt(prompt_text: str, task_packet_content: str) -> str:
-    """Embed the task packet below the Codex lane prompt."""
-    return (
-        f"{prompt_text}\n\n"
-        f"<task-packet>\n{task_packet_content}\n</task-packet>"
-    )
+def _block(tag: str, content: str) -> str:
+    """Wrap artifact content in a named tag block for prompt embedding."""
+    return f"<{tag}>\n{content}\n</{tag}>"

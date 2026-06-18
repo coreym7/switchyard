@@ -26,10 +26,12 @@ Switchyard is intended to become a local Python CLI that coordinates agent lanes
 - test and diff capture
 - final human approval
 
-The early design focuses on two lanes:
+Two lanes, with roles that differ by phase:
 
-- **Codex** as the implementation-planning and execution lane
-- **Claude Code** as the refinement, architecture-review, and verification lane
+- **Planning (implemented):** **Claude** authors and refines the plan; **Codex**
+  reviews it against the repo and owns the approve/revise/block decision.
+- **Implementation (future, Phase 3+):** **Codex** implements the approved plan;
+  **Claude** reviews the diff.
 
 ## Setup
 
@@ -80,9 +82,30 @@ That registers the `switchyard` command for local testing.
 
 ## Current Status
 
-Phase 0 now has a working local adapter spike. The production workflow is still future work.
+Two things are implemented and verified: the **Phase 0 adapter spike** and the
+**bounded planning loop** (Phases 1 + 2a + 2b).
 
-The implemented first build target is **Phase 0: Adapter Spike**. That phase confirms and refines the documented CLI automation path:
+### Planning loop (implemented)
+
+```text
+switchyard run "<task>" [--repo <target-repo>] [--max-rounds N]
+```
+
+Runs the bounded loop: task packet → Claude authors a plan → Codex reviews it
+against the repo and decides → on `needs_revision`, Claude refines and Codex
+reviews again → until Codex approves, blocks, or the round limit is hit. It
+produces exactly one terminal artifact — `final-plan.md` (approved) or
+`blocked-report.md` (blocked / max rounds) — writes `metadata.json` (state
+machine), and mirrors current artifacts into `.switchyard/handoff/active/`. It
+stops at the approved plan; it does **not** implement (that is Phase 3).
+
+Live-verified 2026-06-18 against `c:\dev\agentic test area`: a scoped task ran a
+real 2-round `needs_revision`→`approved` cycle; an ambiguous task terminated
+`blocked`. 75 unit tests pass.
+
+### Phase 0 adapter spike
+
+The first build target was **Phase 0: Adapter Spike**. That phase confirms and refines the documented CLI automation path:
 
 ```text
 task packet
@@ -119,8 +142,8 @@ confirmed:
 - [design/reference/cli/codex-cli-reference.md](design/reference/cli/codex-cli-reference.md) and [design/reference/cli/claude-cli-reference.md](design/reference/cli/claude-cli-reference.md) capture CLI reference findings relevant to Switchyard.
 - [design/phase-0-cli-probe-findings.md](design/phase-0-cli-probe-findings.md) records Phase 0 adapter probe results.
 - [design/archive/switchyard_design_draft.md](design/archive/switchyard_design_draft.md) preserves the original source design draft for historical context.
-- [design/manual-instructions/AGENTS.md](design/manual-instructions/AGENTS.md) preserves the manual Codex implementation-agent rules.
-- [design/manual-instructions/CLAUDE.md](design/manual-instructions/CLAUDE.md) preserves the manual Claude planning and verification rules.
+- [design/manual-instructions/codex-instructions-reference.md](design/manual-instructions/codex-instructions-reference.md) preserves the manual Codex implementation-agent rules.
+- [design/manual-instructions/claude-instructions-reference.md](design/manual-instructions/claude-instructions-reference.md) preserves the manual Claude planning and verification rules.
 
 ## Design Principle
 
@@ -138,26 +161,33 @@ human approval for risky transitions
 
 That stable core can later support API-token adapters, concurrent runs, dashboards, queues, PR automation, cost-aware model routing, or additional model lanes without discarding the initial CLI work.
 
-## Verified Build Target
+## Commands
 
-The first implementation target is a narrow adapter-spike command shaped like:
+Planning loop (implemented):
+
+```text
+switchyard run "<task>" [--repo <target-repo>] [--max-rounds N]
+  -> .switchyard/runs/<run-id>/
+       metadata.json
+       01-task-packet.md
+       02-claude-plan-round-1.md
+       03-codex-review-round-1.md
+       ...                          # more rounds only if needs_revision
+       final-plan.md | blocked-report.md
+```
+
+Adapter spike (Phase 0 probe):
 
 ```text
 switchyard spike-adapters "problem statement"
+  -> runs/<run-id>/
+       00-task-packet.md
+       01-codex-plan.md
+       02-claude-review.md
+       adapter-notes.md
 ```
 
-Verified output:
-
-```text
-runs/<run-id>/
-  00-task-packet.md
-  01-codex-plan.md
-  02-claude-review.md
-  adapter-notes.md
-```
-
-No implementation, tests, commits, pushes, or PRs happen in this first spike.
-It proves the local CLI adapter loop only. The next build target is the
-planning workflow: Codex drafts a structured handoff, Claude reviews it, and
-Switchyard eventually loops until the plan is approved, blocked, or out of
-revision attempts.
+Neither command implements code, runs tests, commits, pushes, or opens PRs. The
+next build target is **Phase 3: implementation** — Codex implements an approved
+`final-plan.md` on a Switchyard branch with a git boundary and test execution,
+followed by **Phase 4: Claude final diff review**.

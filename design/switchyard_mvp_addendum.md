@@ -52,6 +52,48 @@ Implementation comes after those phases prove stable.
 
 ---
 
+## Ratified Loop Model (2026-06-18)
+
+This section is authoritative and supersedes the incremental role ordering in
+the Phase 1 / 2a / 2b sections below where they differ. Phases 1, 2a, and 2b are
+**implemented** as a single bounded planning loop, invoked with:
+
+```text
+switchyard run "<task>" [--repo <target-repo>] [--max-rounds N]
+```
+
+Roles (matches the user's manual workflow):
+
+```text
+Claude  -> authors the initial plan, then refines it each round (owns the plan)
+Codex   -> reviews Claude's plan against the real repo (read-only) and owns the
+           ## Decision gate (approved | needs_revision | blocked); never writes
+           the plan
+```
+
+Loop:
+
+```text
+task packet
+  -> Claude authors plan
+  -> Codex reviews + decides
+       approved        -> write final-plan.md, stop
+       blocked         -> write blocked-report.md, stop
+       needs_revision  -> Claude refines, Codex reviews again
+  -> repeat until approved, blocked, or max rounds reached (-> blocked-report.md)
+```
+
+Nit-folding: Codex receives the current round / max. On round 3+ or the final
+round, if only nit-level issues remain that an implementer can decide, Codex
+approves and lists them under `## Implementation Discretion` rather than spending
+the last round on nits.
+
+The one-pass Phase 1 variant (Codex-drafts / Claude-reviews) was built as a
+stepping stone and then removed; the loop above is the product. Implementation
+(Phase 3) and final diff review (Phase 4) remain future work.
+
+---
+
 ## Phase 0: Adapter Spike
 
 ### Goal
@@ -169,6 +211,10 @@ This should be proven before adding file edits, tests, git diffs, commits, pushe
 
 ## Phase 1: Plan Handoff
 
+> Superseded by the Ratified Loop Model. The roles below (Codex drafts, Claude
+> reviews) describe the original exploratory build order; the shipped loop has
+> Claude author and Codex review. Kept for historical context.
+
 ### Goal
 
 Prove that Switchyard can create a task packet, ask Codex for a draft implementation plan, ask Claude to refine or review that plan, and stop with durable artifacts.
@@ -255,6 +301,10 @@ The run stops predictably.
 
 ## Phase 2a: Codex Critique Step
 
+> Superseded by the Ratified Loop Model. "Codex critique" is implemented as the
+> Codex review/gate step in the loop; Claude (not Codex) owns plan authoring.
+> Kept for historical context.
+
 ### Goal
 
 Add a third agent step where Codex reviews Claude's refinement and returns structured findings.
@@ -330,14 +380,15 @@ Turn the Phase 2a sequence into a bounded review loop.
 
 ### Workflow
 
+Implemented per the Ratified Loop Model above (Claude authors, Codex reviews):
+
 ```text
-1. Codex drafts implementation plan.
-2. Claude reviews/refines the plan.
-3. Codex critiques Claude's refinement.
-4. If approved, Switchyard writes the final plan and stops.
-5. If blocked, Switchyard writes a blocked report and stops.
-6. If needs_revision and review rounds remain, Switchyard asks Claude to refine again.
-7. Repeat until approved, blocked, or max rounds is reached.
+1. Claude authors the implementation plan.
+2. Codex reviews the plan against the repo and returns a decision.
+3. If approved, Switchyard writes the final plan and stops.
+4. If blocked, Switchyard writes a blocked report and stops.
+5. If needs_revision and review rounds remain, Claude refines and Codex reviews again.
+6. Repeat until approved, blocked, or max rounds is reached.
 ```
 
 ### Max Rounds
@@ -354,17 +405,16 @@ workflow:
 ```text
 .switchyard/runs/<run-id>/
   01-task-packet.md
-  02-codex-plan.md
-  03-claude-plan-review-round-1.md
-  04-codex-critique-round-1.md
-  05-claude-plan-review-round-2.md
-  06-codex-critique-round-2.md
-  final_plan.md
-  blocked_report.md
+  02-claude-plan-round-1.md
+  03-codex-review-round-1.md
+  04-claude-plan-round-2.md
+  05-codex-review-round-2.md
+  final-plan.md
+  blocked-report.md
   metadata.json
 ```
 
-Only one of `final_plan.md` or `blocked_report.md` should be required for a completed planning run.
+Only one of `final-plan.md` or `blocked-report.md` is produced for a completed planning run.
 
 ### State Values Added
 
@@ -457,12 +507,15 @@ Switchyard should reduce role confusion by giving each agent only the instructio
 Instead of requiring an agent to infer its role from a broad always-on instruction set, Switchyard should provide narrow prompts such as:
 
 ```text
-Codex: draft an implementation handoff only.
-Claude: review and refine this handoff only.
-Codex: critique Claude's refinement only.
-Codex: implement this approved final plan only.
-Claude: review this diff against the approved plan only.
+Claude: author an implementation plan only.
+Codex: review this plan and return a decision only.
+Claude: refine this plan against the review only.
+Codex: implement this approved final plan only.   (Phase 3, future)
+Claude: review this diff against the approved plan only.   (Phase 4, future)
 ```
+
+The planning lane prompts are `claude_plan.md`, `claude_plan_refine.md`, and
+`codex_review.md`.
 
 The harness owns workflow state.
 

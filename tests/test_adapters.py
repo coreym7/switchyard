@@ -10,8 +10,12 @@ from importlib.resources import files
 import pytest
 
 from switchyard import process
-from switchyard.adapters.claude_cli import run_claude_review
-from switchyard.adapters.codex_cli import run_codex_plan
+from switchyard.adapters.claude_cli import (
+    run_claude_plan,
+    run_claude_refine,
+    run_claude_review,
+)
+from switchyard.adapters.codex_cli import run_codex_plan, run_codex_review
 from switchyard.artifacts import (
     CLAUDE_REVIEW_FILENAME,
     CODEX_PLAN_FILENAME,
@@ -367,3 +371,116 @@ def test_run_subprocess_reports_launch_error(tmp_path, monkeypatch):
 def test_resolve_executable_returns_string_for_known_command_and_none_for_unknown():
     assert process.resolve_executable(sys.executable.split("\\")[-1]) is not None
     assert process.resolve_executable("switchyard-definitely-not-a-command") is None
+
+
+def test_run_codex_review_embeds_plan_round_context_and_writes_artifact(
+    tmp_path, monkeypatch
+):
+    _write_codex_auth(tmp_path, monkeypatch)
+    run_folder = tmp_path / "run"
+    run_folder.mkdir()
+    packet = run_folder / "01-task-packet.md"
+    plan = run_folder / "02-claude-plan-round-1.md"
+    packet.write_text("packet body", encoding="utf-8")
+    plan.write_text("claude plan body", encoding="utf-8")
+    captured = {}
+
+    def fake_run_subprocess(cmd, cwd, env=None, input=None):
+        captured["cmd"] = cmd
+        captured["input"] = input
+        (run_folder / "03-codex-review-round-1.md").write_text(
+            "## Decision\napproved", encoding="utf-8"
+        )
+        return process.SubprocessResult(0, "out", "err", False, None)
+
+    monkeypatch.setattr(process, "resolve_executable", lambda name: "codex.cmd")
+    monkeypatch.setattr(process, "run_subprocess", fake_run_subprocess)
+
+    result = run_codex_review(
+        packet, plan, run_folder, tmp_path, "03-codex-review-round-1.md", 2, 3
+    )
+
+    assert result.success is True
+    assert "--skip-git-repo-check" in captured["cmd"]
+    assert captured["cmd"][captured["cmd"].index("--sandbox") + 1] == "read-only"
+    assert "claude plan body" in captured["input"]
+    assert "packet body" in captured["input"]
+    assert "round 2 of at most 3" in captured["input"]
+    assert "claude plan body" not in captured["cmd"]
+
+
+def test_run_claude_plan_authors_from_packet_and_writes_artifact(tmp_path, monkeypatch):
+    run_folder = tmp_path / "run"
+    run_folder.mkdir()
+    packet = run_folder / "01-task-packet.md"
+    packet.write_text("packet body", encoding="utf-8")
+    captured = {}
+
+    def fake_run_subprocess(cmd, cwd, env=None, input=None):
+        captured["input"] = input
+        return process.SubprocessResult(0, "authored plan", "", False, None)
+
+    monkeypatch.setattr(process, "resolve_executable", lambda name: "claude.cmd")
+    monkeypatch.setattr(process, "run_subprocess", fake_run_subprocess)
+
+    result = run_claude_plan(packet, run_folder, "02-claude-plan-round-1.md")
+
+    assert result.success is True
+    assert "<task-packet>" in captured["input"]
+    assert "current-plan" not in captured["input"]
+    assert (run_folder / "02-claude-plan-round-1.md").read_text(
+        encoding="utf-8"
+    ) == "authored plan"
+
+
+def test_run_claude_refine_omits_critique_block_on_first_round(tmp_path, monkeypatch):
+    run_folder = tmp_path / "run"
+    run_folder.mkdir()
+    packet = run_folder / "01-task-packet.md"
+    plan = run_folder / "02-codex-plan.md"
+    packet.write_text("packet body", encoding="utf-8")
+    plan.write_text("codex plan body", encoding="utf-8")
+    captured = {}
+
+    def fake_run_subprocess(cmd, cwd, env=None, input=None):
+        captured["input"] = input
+        return process.SubprocessResult(0, "refined plan", "", False, None)
+
+    monkeypatch.setattr(process, "resolve_executable", lambda name: "claude.cmd")
+    monkeypatch.setattr(process, "run_subprocess", fake_run_subprocess)
+
+    result = run_claude_refine(packet, plan, None, run_folder, "04-claude-plan-round-2.md")
+
+    assert result.success is True
+    assert "<current-plan>" in captured["input"]
+    assert "codex-review" not in captured["input"]
+    assert (run_folder / "04-claude-plan-round-2.md").read_text(
+        encoding="utf-8"
+    ) == "refined plan"
+
+
+def test_run_claude_refine_includes_critique_block_when_present(tmp_path, monkeypatch):
+    run_folder = tmp_path / "run"
+    run_folder.mkdir()
+    packet = run_folder / "01-task-packet.md"
+    plan = run_folder / "03-claude-plan-review-round-1.md"
+    critique = run_folder / "04-codex-critique-round-1.md"
+    packet.write_text("packet body", encoding="utf-8")
+    plan.write_text("plan body", encoding="utf-8")
+    critique.write_text("critique body", encoding="utf-8")
+    captured = {}
+
+    def fake_run_subprocess(cmd, cwd, env=None, input=None):
+        captured["input"] = input
+        return process.SubprocessResult(0, "refined plan v2", "", False, None)
+
+    monkeypatch.setattr(process, "resolve_executable", lambda name: "claude.cmd")
+    monkeypatch.setattr(process, "run_subprocess", fake_run_subprocess)
+
+    result = run_claude_refine(
+        packet, plan, critique, run_folder, "04-claude-plan-round-2.md"
+    )
+
+    assert result.success is True
+    assert "<codex-review>" in captured["input"]
+    assert "critique body" in captured["input"]

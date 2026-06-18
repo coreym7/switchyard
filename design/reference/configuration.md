@@ -29,21 +29,21 @@ repos:
       - scripts/deploy/
 
 lanes:
-  codex:
-    type: cli
-    command: codex
-    role: planner_implementer
-    prompt_defaults:
-      - prompts/codex_plan.md
-      - prompts/codex_implement.md
-
   claude:
     type: cli
     command: claude
-    role: reviewer_architect
+    role: planner_architect          # authors + refines the plan
     prompt_defaults:
-      - prompts/claude_plan_review.md
-      - prompts/claude_diff_review.md
+      - prompts/claude_plan.md
+      - prompts/claude_plan_refine.md
+
+  codex:
+    type: cli
+    command: codex
+    role: reviewer_implementer       # reviews/gates the plan; implements later
+    prompt_defaults:
+      - prompts/codex_review.md
+      - prompts/codex_implement.md   # Phase 3, future
 
 workflow:
   max_plan_review_rounds: 3
