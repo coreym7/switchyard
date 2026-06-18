@@ -5,5 +5,16 @@ description = "Local orchestration harness for multi-agent SDLC handoff workflow
 requires-python = ">=3.13"
 dependencies = []
 
+[project.scripts]
+switchyard = "switchyard.cli:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]

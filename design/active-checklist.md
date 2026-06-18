@@ -20,17 +20,19 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 - [ ] Capture exact non-interactive Claude command shape.
 - [x] Define the Phase 0 task packet fields.
 - [x] Define run folder naming rules.
-- [ ] Implement run context creation.
-- [ ] Implement task packet writing.
-- [ ] Implement artifact filename constants.
-- [ ] Implement artifact write/read helpers.
+- [x] Implement run context creation.
+- [x] Implement task packet writing.
+- [x] Implement artifact filename constants.
+- [x] Implement artifact write helper.
+- [ ] Implement artifact read helper.
 - [ ] Implement base lane adapter result shape.
 - [ ] Implement Codex CLI adapter.
 - [ ] Implement Claude CLI adapter.
 - [ ] Implement `spike-adapters` workflow orchestration.
-- [ ] Add tests for run context creation.
-- [ ] Add tests for task packet rendering.
-- [ ] Add tests for artifact write/read helpers.
+- [x] Add tests for run context creation.
+- [x] Add tests for task packet rendering.
+- [x] Add tests for artifact write helper.
+- [ ] Add tests for artifact read helper.
 - [ ] Add tests for adapter result parsing or preservation.
 - [ ] Run the first real Codex -> Claude CLI spike.
 - [ ] Record adapter findings in the design docs.
@@ -48,7 +50,7 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 
 - [ ] Create `design/handoffs/` directory to facilitate the manual process until Switchyard automates it.
 - [ ] Add a project-root `CLAUDE.md` with Switchyard-specific rules (e.g., Phase 0 means no real CLI calls in tests; mock subprocesses). Distinct from the legacy reference at [design/manual-instructions/CLAUDE.md](manual-instructions/CLAUDE.md).
-- [ ] Add `[project.scripts] switchyard = "switchyard.cli:main"` to `pyproject.toml` so `switchyard spike-adapters "..."` resolves after `pip install -e .`.
+- [x] Add `[project.scripts] switchyard = "switchyard.cli:main"` to `pyproject.toml` so `switchyard spike-adapters "..."` resolves after `pip install -e .`.
 - [ ] Add `.gitignore` (at minimum `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.switchyard/`).
 - [ ] Decide test approach for `workflows/adapter_spike.py` (subprocess mocking vs. integration only) and add a `test_adapter_spike.py` slot to `tests/` once decided.
 
