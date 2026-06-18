@@ -532,6 +532,29 @@ API-token adapters are likely easiest to introduce for planning and review phase
 
 ---
 
+## Future Cost-Aware Routing
+
+Switchyard should eventually support routing different workflow steps to different models based on task risk, model strength, and real usage limits.
+
+One candidate routing pattern:
+
+```text
+Claude Opus:
+  refine plans and pressure-test architecture
+
+Codex 5.5:
+  critique plans for implementation risk and repo-fit
+
+Codex 5.3:
+  implement approved, well-scoped plans and align tests/docs
+```
+
+The rationale is that premium planning and critique can reduce ambiguity before implementation. Once the plan is constrained, a lower-cost or lower-usage implementation model may be sufficient for many tasks.
+
+This is not part of Phase 0. Phase 0 should only prove the CLI adapter loop. Cost-aware routing belongs after the basic lane adapter contract is stable.
+
+---
+
 ## Recommended First Build Target
 
 The first build target should be Phase 0 only:
