@@ -1,0 +1,9 @@
+[project]
+name = "switchyard"
+version = "0.0.0"
+description = "Local orchestration harness for multi-agent SDLC handoff workflows."
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
