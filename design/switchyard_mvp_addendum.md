@@ -107,7 +107,7 @@ https://code.claude.com/docs/en/cli-reference
 ### Required Outputs
 
 ```text
-runs/<run-id>/
+.switchyard/runs/<run-id>/
   00-task-packet.md
   01-codex-plan.md
   02-claude-review.md
@@ -173,26 +173,41 @@ This should be proven before adding file edits, tests, git diffs, commits, pushe
 
 Prove that Switchyard can create a task packet, ask Codex for a draft implementation plan, ask Claude to refine or review that plan, and stop with durable artifacts.
 
+### Invocation Model
+
+Default use is from inside the repository being worked on:
+
+```text
+cd <target-repo>
+switchyard run "<problem statement>"
+```
+
+Switchyard treats the current working directory as the target repo unless an
+explicit `--repo <target-repo>` override is provided for automation. The
+Switchyard source repo is only the tool implementation; run artifacts and
+handoff state are written under the target repo's `.switchyard/` directory.
+
 ### Workflow
 
 ```text
 1. User runs Switchyard with a problem statement.
-2. Switchyard creates a run folder.
-3. Switchyard creates metadata for the run.
-4. Switchyard creates a task packet.
-5. Switchyard invokes Codex with a narrow plan-drafting prompt.
-6. Codex writes or returns a draft implementation plan.
-7. Switchyard stores the Codex plan in the run folder and active handoff directory.
-8. Switchyard invokes Claude with a narrow plan-review/refinement prompt.
-9. Claude writes or returns a reviewed/refined plan.
-10. Switchyard stores the Claude output.
-11. Switchyard stops.
+2. Switchyard resolves the target repo from cwd or `--repo`.
+3. Switchyard creates a run folder in the target repo.
+4. Switchyard creates metadata for the run.
+5. Switchyard creates a task packet.
+6. Switchyard invokes Codex with a narrow plan-drafting prompt.
+7. Codex writes or returns a draft implementation plan.
+8. Switchyard stores the Codex plan in the run folder and active handoff directory.
+9. Switchyard invokes Claude with a narrow plan-review/refinement prompt.
+10. Claude writes or returns a reviewed/refined plan.
+11. Switchyard stores the Claude output.
+12. Switchyard stops.
 ```
 
 ### Required Outputs
 
 ```text
-runs/<run-id>/
+.switchyard/runs/<run-id>/
   metadata.json
   00-intake.md
   01-task-packet.md
@@ -203,7 +218,7 @@ runs/<run-id>/
 Active handoff directory:
 
 ```text
-active/
+.switchyard/handoff/active/
   task_packet.md
   codex_plan.md
   claude_plan_review.md
@@ -258,14 +273,14 @@ Add a third agent step where Codex reviews Claude's refinement and returns struc
 ### Required Output
 
 ```text
-runs/<run-id>/
+.switchyard/runs/<run-id>/
   04-codex-critique.md
 ```
 
 Active handoff directory:
 
 ```text
-active/
+.switchyard/handoff/active/
   codex_critique.md
 ```
 
@@ -337,7 +352,7 @@ workflow:
 ### Required Outputs
 
 ```text
-runs/<run-id>/
+.switchyard/runs/<run-id>/
   01-task-packet.md
   02-codex-plan.md
   03-claude-plan-review-round-1.md

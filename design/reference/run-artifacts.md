@@ -2,6 +2,26 @@
 
 Status: durable reference extracted from `design/archive/switchyard_design_draft.md`.
 
+## Invocation Model
+
+Switchyard is a tool invoked from the repository being worked on. By default,
+the current working directory is the target repo:
+
+```text
+cd <target-repo>
+switchyard run "<task>"
+```
+
+Automation may pass an explicit repo path, but that is an override:
+
+```text
+switchyard run --repo <target-repo> "<task>"
+```
+
+Run artifacts belong to the target repo, not to the Switchyard source repo.
+Switchyard should resolve the target repo root, then create artifacts under
+that repo's `.switchyard/` directory.
+
 ## Purpose
 
 Every Switchyard run creates a durable run folder. The run folder is the audit trail for what was requested, what each agent produced, what changed, what tests ran, and what risks remain.
@@ -11,7 +31,7 @@ Every Switchyard run creates a durable run folder. The run folder is the audit t
 Phase 0 proves the adapter loop only:
 
 ```text
-runs/<run-id>/
+.switchyard/runs/<run-id>/
   00-task-packet.md
   01-codex-plan.md
   02-claude-review.md
@@ -23,7 +43,7 @@ runs/<run-id>/
 Later phases can expand the same run folder shape:
 
 ```text
-runs/<run-id>/
+.switchyard/runs/<run-id>/
   00-intake.md
   01-task-packet.md
   02-codex-plan.md
@@ -75,7 +95,7 @@ Switchyard should preserve the existing handoff pattern. At each phase, it write
 Planning active state:
 
 ```text
-handoff/active/
+.switchyard/handoff/active/
   task_packet.md
   codex_plan.md
   claude_plan_review.md
@@ -84,7 +104,7 @@ handoff/active/
 Finalized planning state:
 
 ```text
-handoff/active/
+.switchyard/handoff/active/
   task_packet.md
   final_plan.md
 ```
@@ -92,7 +112,7 @@ handoff/active/
 Completed archive state:
 
 ```text
-handoff/archive/
+.switchyard/handoff/archive/
   2026-04-30-salesforce-sync-retry/
     task_packet.md
     codex_plan.md
