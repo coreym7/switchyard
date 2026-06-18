@@ -4,14 +4,56 @@ This file tracks deferred and next-up work for Switchyard.
 
 ## Current Focus
 
-Phase 0: Adapter Spike.
+Phase 1 / Phase 2 planning loop design.
 
-Goal:
+Current state:
 
 ```text
-Confirm and refine the smallest useful CLI automation loop:
-task packet -> Codex plan -> Claude review -> adapter notes -> stop.
+Phase 0 adapter spike is proven:
+task packet -> Codex plan -> Claude review -> adapter notes -> stop
 ```
+
+The next product step is to turn the proven adapter path into a real planning
+workflow: formalize the Codex handoff artifact, have Claude review it, let
+Codex revise it, and stop only when the plan is implementation-ready, blocked,
+or the bounded review loop reaches its limit.
+
+Recommended next session:
+
+1. Draft a Phase 1 handoff for the one-pass planning artifact contract.
+2. Decide the decision format for Claude plan review (`approved`,
+   `needs_revision`, `blocked`) and where Switchyard stores that state.
+3. Draft Phase 2a/2b loop design only after the Phase 1 artifact contract is
+   clear.
+
+## Last Verified Commit
+
+`ea060b3` - Verify OAuth adapter spike.
+
+Verified on 2026-05-04:
+
+- Unit suite passed: `45 passed`.
+- Real adapter run succeeded against `c:\dev\project-profitability`.
+- Run folder:
+  `c:\dev\project-profitability\.switchyard\runs\2026-05-04-1509-document-the-npm-scripts-in-package`.
+- Codex referenced `package.json` script `test` running `jest`.
+- Claude produced `02-claude-review.md` with a `## Decision` section.
+- `adapter-notes.md` showed both lanes succeeded.
+
+## Next Work Breakdown
+
+- [ ] Phase 1: define the one-pass planning handoff artifact contract.
+- [ ] Phase 1: update prompts so Codex emits that contract consistently.
+- [ ] Phase 1: add artifact-reading helpers if the workflow needs to inspect
+  prior lane outputs as files rather than paths.
+- [ ] Phase 1: run the one-pass planning path against `agentic test area`.
+- [ ] Phase 2a: define Claude plan-review decision schema and artifact shape.
+- [ ] Phase 2a: teach Switchyard to parse or preserve Claude's review decision.
+- [ ] Phase 2b: design bounded revision loop stop conditions: approved,
+  blocked, max attempts, or missing artifacts.
+- [ ] Phase 2b: add loop artifacts and notes so every revision round is durable.
+- [ ] Phase 2b: verify the loop against a simple task and an intentionally
+  ambiguous task in `agentic test area`.
 
 ## Phase 0 Checklist
 
@@ -100,8 +142,8 @@ Good playground cases to keep available:
 ## Later Work
 
 - [ ] Phase 1: formalize one-pass planning handoff.
-- [ ] Phase 2a: add Codex critique step.
-- [ ] Phase 2b: add bounded review loop.
+- [ ] Phase 2a: add Claude review of the Codex plan.
+- [ ] Phase 2b: add bounded Codex revision / Claude review loop.
 - [ ] Phase 3: add implementation step.
 - [ ] Phase 4: add final diff review.
 - [ ] Explore cost-aware model routing after the adapter contract is stable.

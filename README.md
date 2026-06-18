@@ -138,15 +138,15 @@ human approval for risky transitions
 
 That stable core can later support API-token adapters, concurrent runs, dashboards, queues, PR automation, cost-aware model routing, or additional model lanes without discarding the initial CLI work.
 
-## First Build Target
+## Verified Build Target
 
-The first implementation target should be a narrow command shaped like:
+The first implementation target is a narrow adapter-spike command shaped like:
 
 ```text
 switchyard spike-adapters "problem statement"
 ```
 
-Expected output:
+Verified output:
 
 ```text
 runs/<run-id>/
@@ -156,4 +156,8 @@ runs/<run-id>/
   adapter-notes.md
 ```
 
-No implementation, tests, commits, pushes, or PRs should happen in this first spike.
+No implementation, tests, commits, pushes, or PRs happen in this first spike.
+It proves the local CLI adapter loop only. The next build target is the
+planning workflow: Codex drafts a structured handoff, Claude reviews it, and
+Switchyard eventually loops until the plan is approved, blocked, or out of
+revision attempts.
