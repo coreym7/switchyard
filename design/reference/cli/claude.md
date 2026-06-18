@@ -19,6 +19,12 @@ Re-capture this doc whenever the CLI is upgraded. Help output is the source of t
 - **`--append-system-prompt <prompt>`** — appends to the default system prompt. Not what Switchyard wants for isolation; keeps default in play.
 - **`--exclude-dynamic-system-prompt-sections`** — moves per-machine sections (cwd, env info, memory paths, git status) out of the system prompt. Improves reproducibility across machines. Only applies with the default system prompt; ignored when `--system-prompt` is used.
 
+Auth caveat: captured help says `--bare` also requires `ANTHROPIC_API_KEY`
+or `apiKeyHelper` auth and does not read OAuth/keychain login state. The
+initial Phase 0 probe used non-bare `claude -p` and worked with the user's
+individual-plan OAuth login; the implemented `--bare` adapter invocation failed
+on 2026-05-04 with stdout `Not logged in - Please run /login`.
+
 ### Model selection
 
 - **`--model <model>`** — accepts an alias (`sonnet`, `opus`, `haiku`) or a full model name (e.g. `claude-sonnet-4-6`, `claude-haiku-4-5-20251001`). For Phase 0 testing, `--model haiku` is the cheap option.
@@ -58,6 +64,15 @@ claude -p --bare --model <selected> --system-prompt-file <lane-prompt-file> "<ta
 (Substitute `--system-prompt` if the prompt is short enough to pass inline. The `--help` output references `--system-prompt[-file]` indicating both forms exist; verify the file form before relying on it.)
 
 For Phase 0 testing specifically, add `--model haiku` and optionally `--max-budget-usd` as a belt-and-suspenders cap.
+
+### Open auth/isolation decision
+
+Strict global `CLAUDE.md` isolation via `--bare` currently conflicts with
+individual-plan OAuth use unless Claude is configured with `ANTHROPIC_API_KEY`
+or an `apiKeyHelper`. If Switchyard must use OAuth, the Claude lane needs a
+new design decision: accept non-bare ambient user context, prove another
+flag/settings shape that suppresses global instructions while preserving OAuth,
+or adopt API-key/helper auth for strict isolation.
 
 ## Full help output (verbatim)
 

@@ -472,13 +472,22 @@ The agents own the current artifact.
 
 Switchyard should provide each lane prompt explicitly, but CLI-level isolation differs by adapter.
 
-Claude Code has a clean isolation path for the planning/review lanes:
+Claude Code has a clean isolation path for the planning/review lanes when
+API-key or API-key-helper auth is available:
 
 ```text
 claude -p --bare --system-prompt-file <lane-prompt-file> ...
 ```
 
 `--bare` suppresses global and project `CLAUDE.md` auto-discovery. The `--system-prompt` / `--system-prompt-file` option then supplies the lane prompt directly.
+
+However, `--bare` also disables OAuth/keychain auth. The 2026-05-04 real
+adapter run failed in this mode with `Not logged in - Please run /login` under
+the user's individual-plan OAuth setup. Non-bare `claude -p` worked in the
+initial probe, but that probe did not verify global `CLAUDE.md` isolation. The
+Claude lane therefore needs a follow-up design decision: strict isolation with
+API-key/helper auth, or OAuth-compatible execution with accepted ambient user
+context or another verified suppression mechanism.
 
 Codex does not currently have an equivalent verified `AGENTS.md` bypass flag. `codex exec --help` exposes `--ignore-user-config` for `$CODEX_HOME/config.toml` and `--ignore-rules` for execpolicy `.rules` files, but neither is documented as an `AGENTS.md` bypass. OpenAI's current Codex agent-loop documentation describes global and project `AGENTS.md` aggregation as part of prompt construction, and local `codex debug prompt-input` testing confirmed that marker text from both `CODEX_HOME/AGENTS.md` and the working directory's `AGENTS.md` appears in the model-visible prompt.
 
@@ -492,7 +501,10 @@ Option B: run Codex from a harness-owned directory tree with no AGENTS.md in its
 Option C: detect ambient AGENTS.md files and stop for user approval before invoking Codex.
 ```
 
-Until that decision is made, the Codex adapter command shape is provisional.
+Phase 0 chose the managed-home route for Codex. The 2026-05-04 real adapter
+run also found that prompt transport must use stdin on Windows: multi-line
+prompts passed through npm `.cmd` shims as positional argv can be truncated by
+`cmd.exe` reparsing. `codex exec -` plus stdin avoids that path.
 
 ---
 

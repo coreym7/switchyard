@@ -34,17 +34,27 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 - [x] Add tests for artifact write helper.
 - [ ] Add tests for artifact read helper.
 - [ ] Add tests for adapter result parsing or preservation.
-- [ ] Run the first real Codex -> Claude CLI spike.
-- [ ] Record adapter findings in the design docs.
+- [x] Run the first real Codex -> Claude CLI spike.
+- [x] Record adapter findings in the design docs.
+- [ ] Decide Claude auth/isolation policy for individual-plan OAuth use.
+- [ ] Decide whether Phase 0 Codex planning may read target repo files.
 
 ## Phase 0 Design Calls (locked, pending implementation)
 
 - [x] Verify whether Codex CLI exposes a flag that suppresses loading of `AGENTS.md` (project + global). Current finding: no verified bypass flag; prompt isolation requires cwd/`CODEX_HOME` control or accepting ambient instructions.
-- [x] Verify Claude Code CLI flags that suppress loading of `CLAUDE.md` (project + global). Current finding: `--bare` plus `--system-prompt` / `--system-prompt-file` gives clean lane-prompt isolation.
+- [x] Verify Claude Code CLI flags that suppress loading of `CLAUDE.md` (project + global). Current finding: `--bare` plus `--system-prompt` / `--system-prompt-file` gives clean lane-prompt isolation, but `--bare` also disables OAuth/keychain auth and requires `ANTHROPIC_API_KEY` or `apiKeyHelper`.
 - [x] Decide Codex prompt-isolation policy for Switchyard: **use a Switchyard-managed `CODEX_HOME`** that carries `auth.json` from the real `CODEX_HOME` but contains no `AGENTS.md`. Run cwd (the run folder) also has no `AGENTS.md` in its ancestry.
 - [x] Test the managed-`CODEX_HOME` shape: copy `auth.json` from `~/.codex/`, omit everything else, run `codex exec` against it, confirm clean prompt and successful auth.
 - [x] If the managed-`CODEX_HOME` test passes, update `scripts/phase-0-probe.py` to add an isolation-focused pass and capture findings alongside the ambient run.
 - [x] Document the verified prompt-isolation findings in `design/switchyard_mvp_addendum.md` under the Prompting Principle section.
+
+## Current Phase 0 Findings
+
+- Phase 0 adapter prompt transport now sends multi-line prompts over stdin and decodes subprocess output as UTF-8 with replacement.
+- Real verification on 2026-05-04 against `c:\dev\project-profitability` no longer produced the old Codex one-line truncation refusal or a `UnicodeDecodeError`.
+- The verification did not fully satisfy the handoff expectation that Codex reference actual npm scripts: the current Codex lane prompt says there are no files to open and no tools to use, so Codex cannot inspect `package.json`.
+- Claude `--bare` failed under the user's individual-plan OAuth setup with `Not logged in - Please run /login`; this is expected from the captured CLI help because `--bare` does not read OAuth/keychain auth.
+- Non-bare `claude -p` worked in the initial probe, but that probe did not verify global `CLAUDE.md` isolation.
 
 ## Repo Setup (deferred from initial review)
 

@@ -415,3 +415,40 @@ Create a new file `greetings.py` in the working directory. Add a single function
 - Codex stderr remains noisy even on exit code `0`, including Cloudflare/403 warnings for plugin and analytics calls, so Switchyard should not treat stderr presence alone as failure.
 - Claude stdout remained clean final-answer text and stderr was empty in this run.
 - Next adapter cleanup still worth verifying: `codex exec -o <artifact>` file contents/stdout duplication, and Claude `--bare` plus explicit lane prompt in the same probe style.
+
+## Real Adapter Run Follow-Up
+
+Generated: 2026-05-04 local time
+
+Command shape:
+
+```text
+PYTHONPATH=C:\dev\Switchyard\src python -c "from switchyard.cli import main; ..." spike-adapters "Document the npm scripts in package.json under a new section in README.md, explaining what each one does."
+```
+
+Target repository:
+
+```text
+c:\dev\project-profitability
+```
+
+Run folder:
+
+```text
+c:\dev\project-profitability\.switchyard\runs\2026-05-04-1437-document-the-npm-scripts-in-package
+```
+
+Observed results:
+
+- The old Codex prompt truncation refusal was gone after sending the prompt through stdin.
+- No `UnicodeDecodeError` appeared after forcing UTF-8 subprocess decoding with replacement.
+- `01-codex-plan.md` was a multi-section plan, but it did not reference the actual `package.json` script `test: jest`.
+- The missing script detail is explained by the current Codex lane prompt, which says there are no files to open and no tools to use.
+- Claude did not produce `02-claude-review.md`; the lane exited `1`.
+- A direct rerun of the Claude lane captured stdout `Not logged in - Please run /login` and empty stderr.
+
+Interpretation:
+
+- The stdin transport and UTF-8 decoding fixes resolved the Windows-specific bugs found by the first real run.
+- The remaining Codex verification mismatch is a prompt/scope design issue, not a transport bug.
+- The remaining Claude failure is an auth/isolation design issue: the initial probe used non-bare `claude -p`, while the adapter uses `--bare`; captured help says bare mode does not read OAuth/keychain login state.
