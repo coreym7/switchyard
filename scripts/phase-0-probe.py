@@ -5,7 +5,7 @@ with a trivial prompt, captures behavior, writes findings to
 `design/phase-0-cli-probe-findings.md`.
 
 Run from the Switchyard repo root:
-    python design/phase-0-probe.py
+    python scripts/phase-0-probe.py
 
 The script runs each CLI in an isolated temp directory so neither one
 picks up Switchyard's design docs, AGENTS.md, or CLAUDE.md as context.
@@ -164,7 +164,7 @@ def main() -> int:
         "",
         f"Generated: {timestamp}",
         "",
-        "Source script: `design/phase-0-probe.py`",
+        "Source script: `scripts/phase-0-probe.py`",
         "",
         "Each CLI was invoked once in an isolated temp directory with the same prompt.",
         "Raw stdout/stderr is preserved verbatim below.",

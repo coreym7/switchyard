@@ -2,7 +2,7 @@
 
 Generated: 2026-04-30 17:40:48 UTC
 
-Source script: `design/phase-0-probe.py`
+Source script: `scripts/phase-0-probe.py`
 
 Each CLI was invoked once in an isolated temp directory with the same prompt.
 Raw stdout/stderr is preserved verbatim below.

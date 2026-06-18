@@ -1,5 +1,7 @@
 # Switchyard Design Draft
 
+Status: source design draft. This is not the active Phase 0 spec, but it still contains future-state material that has not been fully extracted into durable reference docs. Do not archive this file until the extraction checklist in `design/active-checklist.md` is complete.
+
 ## 1. Concept
 
 **Switchyard** is a local Python-based SDLC harness that automates the step-to-step orchestration of an existing multi-agent coding workflow.

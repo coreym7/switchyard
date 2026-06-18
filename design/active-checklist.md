@@ -18,8 +18,8 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 - [ ] Confirm local CLI availability for Codex and Claude Code.
 - [ ] Capture exact non-interactive Codex command shape.
 - [ ] Capture exact non-interactive Claude command shape.
-- [ ] Define the Phase 0 task packet fields.
-- [ ] Define run folder naming rules.
+- [x] Define the Phase 0 task packet fields.
+- [x] Define run folder naming rules.
 - [ ] Implement run context creation.
 - [ ] Implement task packet writing.
 - [ ] Implement artifact filename constants.
@@ -41,7 +41,7 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 - [x] Verify Claude Code CLI flags that suppress loading of `CLAUDE.md` (project + global). Current finding: `--bare` plus `--system-prompt` / `--system-prompt-file` gives clean lane-prompt isolation.
 - [ ] Decide Codex prompt-isolation policy for Switchyard: controlled cwd/`CODEX_HOME` harness, accepted ambient `AGENTS.md`, or stop and ask the user when ambient instructions are detected.
 - [ ] If choosing controlled `CODEX_HOME`, test a Switchyard Codex home that preserves auth material but omits `AGENTS.md`.
-- [ ] If Codex isolation is required, update `design/phase-0-probe.py` to run an isolation-focused pass and capture findings side-by-side with the inherit-globals run.
+- [ ] If Codex isolation is required, update `scripts/phase-0-probe.py` to run an isolation-focused pass and capture findings side-by-side with the inherit-globals run.
 - [x] Document the verified prompt-isolation findings in `design/switchyard_mvp_addendum.md` under the Prompting Principle section.
 
 ## Repo Setup (deferred from initial review)
@@ -51,6 +51,21 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 - [ ] Add `[project.scripts] switchyard = "switchyard.cli:main"` to `pyproject.toml` so `switchyard spike-adapters "..."` resolves after `pip install -e .`.
 - [ ] Add `.gitignore` (at minimum `__pycache__/`, `*.pyc`, `.pytest_cache/`, `runs/`).
 - [ ] Decide test approach for `workflows/adapter_spike.py` (subprocess mocking vs. integration only) and add a `test_adapter_spike.py` slot to `tests/` once decided.
+
+## Documentation Governance / Draft Extraction
+
+- [x] Keep `README.md` as setup and index only.
+- [x] Keep `design/active-checklist.md` as the only status, blocker, and next-work tracker.
+- [x] Keep `design/switchyard_mvp_addendum.md` as the active phased MVP spec.
+- [x] Keep `design/reference/cli/*.md` as durable CLI reference docs.
+- [x] Keep `design/phase-0-cli-probe-findings.md` as the Phase 0 adapter findings log.
+- [x] Move executable probe utilities out of `design/` only after updating all references.
+- [x] Extract task packet fields from `design/archive/switchyard_design_draft.md` into a durable reference doc.
+- [x] Extract run folder and artifact layout from `design/archive/switchyard_design_draft.md` into a durable reference doc.
+- [x] Extract workflow states and metadata rules from `design/archive/switchyard_design_draft.md` into a durable reference doc.
+- [x] Extract configuration shape from `design/archive/switchyard_design_draft.md` into a durable reference doc.
+- [x] Extract guardrails, git boundary, commit/PR behavior, and final report shape from `design/archive/switchyard_design_draft.md` into durable reference docs.
+- [x] Archive or demote `design/archive/switchyard_design_draft.md` only after all durable sections are extracted.
 
 ## Later Work
 

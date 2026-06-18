@@ -96,10 +96,13 @@ Phase 0 is not a blank feasibility investigation. Official CLI documentation alr
 
 ## Documentation Map
 
-- [design/switchyard_design_draft.md](design/switchyard_design_draft.md) contains the broader product and architecture concept.
 - [design/switchyard_mvp_addendum.md](design/switchyard_mvp_addendum.md) narrows the MVP into phases and defines the Phase 0 adapter spike.
 - [design/implementation_skeleton.md](design/implementation_skeleton.md) names the initial package skeleton for the Phase 0 implementation.
 - [design/active-checklist.md](design/active-checklist.md) tracks the current implementation queue.
+- [design/reference/task-packet.md](design/reference/task-packet.md), [design/reference/run-artifacts.md](design/reference/run-artifacts.md), [design/reference/workflow-states.md](design/reference/workflow-states.md), [design/reference/configuration.md](design/reference/configuration.md), and [design/reference/guardrails-and-reporting.md](design/reference/guardrails-and-reporting.md) hold durable workflow reference details extracted from the original design draft.
+- [design/reference/cli/codex.md](design/reference/cli/codex.md) and [design/reference/cli/claude.md](design/reference/cli/claude.md) capture CLI reference findings relevant to Switchyard.
+- [design/phase-0-cli-probe-findings.md](design/phase-0-cli-probe-findings.md) records Phase 0 adapter probe results.
+- [design/archive/switchyard_design_draft.md](design/archive/switchyard_design_draft.md) preserves the original source design draft for historical context.
 - [design/manual-instructions/AGENTS.md](design/manual-instructions/AGENTS.md) preserves the manual Codex implementation-agent rules.
 - [design/manual-instructions/CLAUDE.md](design/manual-instructions/CLAUDE.md) preserves the manual Claude planning and verification rules.
 
