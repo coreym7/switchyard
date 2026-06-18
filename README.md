@@ -58,6 +58,7 @@ Phase 0 is not a blank feasibility investigation. Official CLI documentation alr
 - [design/switchyard_design_draft.md](design/switchyard_design_draft.md) contains the broader product and architecture concept.
 - [design/switchyard_mvp_addendum.md](design/switchyard_mvp_addendum.md) narrows the MVP into phases and defines the Phase 0 adapter spike.
 - [design/implementation_skeleton.md](design/implementation_skeleton.md) names the initial package skeleton for the Phase 0 implementation.
+- [design/active-checklist.md](design/active-checklist.md) tracks the current implementation queue.
 - [design/manual-instructions/AGENTS.md](design/manual-instructions/AGENTS.md) preserves the manual Codex implementation-agent rules.
 - [design/manual-instructions/CLAUDE.md](design/manual-instructions/CLAUDE.md) preserves the manual Claude planning and verification rules.
 
