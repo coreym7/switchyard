@@ -31,19 +31,6 @@ The early design focuses on two lanes:
 - **Codex** as the implementation-planning and execution lane
 - **Claude Code** as the refinement, architecture-review, and verification lane
 
-## What This Is Not
-
-Switchyard is not intended to start as:
-
-- a web dashboard
-- a multi-user service
-- an auto-merge system
-- a production deployment tool
-- a replacement for human judgment
-- a from-scratch agent runtime
-
-The first version should be deliberately small and file-based.
-
 ## Current Status
 
 This repository currently contains design and scoping documents only. No production implementation exists yet.
@@ -68,10 +55,10 @@ Phase 0 is not a blank feasibility investigation. Official CLI documentation alr
 
 ## Documentation Map
 
-- [switchyard_design_draft.md](switchyard_design_draft.md) contains the broader product and architecture concept.
-- [switchyard_mvp_addendum.md](switchyard_mvp_addendum.md) narrows the MVP into phases and defines the Phase 0 adapter spike.
-- [AGENTS.md](AGENTS.md) defines Codex implementation-agent rules for this repo.
-- [CLAUDE.md](CLAUDE.md) defines Claude planning and verification rules for this repo.
+- [design/switchyard_design_draft.md](design/switchyard_design_draft.md) contains the broader product and architecture concept.
+- [design/switchyard_mvp_addendum.md](design/switchyard_mvp_addendum.md) narrows the MVP into phases and defines the Phase 0 adapter spike.
+- [design/manual-instructions/AGENTS.md](design/manual-instructions/AGENTS.md) preserves the manual Codex implementation-agent rules.
+- [design/manual-instructions/CLAUDE.md](design/manual-instructions/CLAUDE.md) preserves the manual Claude planning and verification rules.
 
 ## Design Principle
 
