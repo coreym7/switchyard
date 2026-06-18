@@ -452,3 +452,40 @@ Interpretation:
 - The stdin transport and UTF-8 decoding fixes resolved the Windows-specific bugs found by the first real run.
 - The remaining Codex verification mismatch is a prompt/scope design issue, not a transport bug.
 - The remaining Claude failure is an auth/isolation design issue: the initial probe used non-bare `claude -p`, while the adapter uses `--bare`; captured help says bare mode does not read OAuth/keychain login state.
+
+## Real Adapter Run After OAuth and Read-Only Prompt Fix
+
+Generated: 2026-05-04 local time
+
+Command shape:
+
+```text
+PYTHONPATH=C:\dev\Switchyard\src python -c "from switchyard.cli import main; ..." spike-adapters "Document the npm scripts in package.json under a new section in README.md, explaining what each one does."
+```
+
+Target repository:
+
+```text
+c:\dev\project-profitability
+```
+
+Run folder:
+
+```text
+c:\dev\project-profitability\.switchyard\runs\2026-05-04-1509-document-the-npm-scripts-in-package
+```
+
+Observed results:
+
+- Unit tests passed before the real run: `45 passed`.
+- Codex succeeded and wrote `01-codex-plan.md`.
+- The Codex plan referenced the actual `package.json` script: `test` running `jest`.
+- Claude succeeded without `--bare` and wrote `02-claude-review.md` using the user's existing OAuth/keychain login.
+- The Claude review included a `## Decision` section. The decision was `needs_revision` because Claude found an ambiguity in the sample task packet's "record adapter findings" requirement, not because the adapter failed.
+- `adapter-notes.md` showed both lanes succeeded.
+
+Interpretation:
+
+- The Phase 0 adapter loop now works end-to-end for the verified local OAuth setup.
+- Codex can safely make plans concrete by inspecting target repo files under `--sandbox read-only`.
+- Claude OAuth compatibility requires non-bare execution for now. Strict `CLAUDE.md` isolation remains a later design problem unless API-key/helper auth or another OAuth-compatible suppression mechanism is proven.

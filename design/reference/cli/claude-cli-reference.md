@@ -25,6 +25,13 @@ initial Phase 0 probe used non-bare `claude -p` and worked with the user's
 individual-plan OAuth login; the implemented `--bare` adapter invocation failed
 on 2026-05-04 with stdout `Not logged in - Please run /login`.
 
+Phase 0 follow-up: the adapter now intentionally omits `--bare` so the user's
+individual-plan OAuth/keychain login works. The verified command shape is
+`claude -p --system-prompt-file <file> --tools "" --model haiku
+--max-budget-usd 0.10`, with the task packet and Codex plan sent over stdin.
+This is an MVP tradeoff: OAuth works, but strict global/project `CLAUDE.md`
+suppression is deferred.
+
 ### Model selection
 
 - **`--model <model>`** — accepts an alias (`sonnet`, `opus`, `haiku`) or a full model name (e.g. `claude-sonnet-4-6`, `claude-haiku-4-5-20251001`). For Phase 0 testing, `--model haiku` is the cheap option.
@@ -55,7 +62,7 @@ on 2026-05-04 with stdout `Not logged in - Please run /login`.
 
 ## Switchyard adapter implications
 
-The Switchyard Claude lane adapter should default to:
+For strict prompt isolation with API-key/helper auth, the Claude lane can use:
 
 ```text
 claude -p --bare --model <selected> --system-prompt-file <lane-prompt-file> "<task content>"
@@ -63,16 +70,26 @@ claude -p --bare --model <selected> --system-prompt-file <lane-prompt-file> "<ta
 
 (Substitute `--system-prompt` if the prompt is short enough to pass inline. The `--help` output references `--system-prompt[-file]` indicating both forms exist; verify the file form before relying on it.)
 
-For Phase 0 testing specifically, add `--model haiku` and optionally `--max-budget-usd` as a belt-and-suspenders cap.
+For Phase 0 testing with the user's individual-plan OAuth login, the adapter
+uses the non-bare command shape:
+
+```text
+claude -p --system-prompt-file <lane-prompt-file> --tools "" --model haiku --max-budget-usd 0.10
+```
+
+The lane prompt is supplied by `--system-prompt-file`; task artifacts are sent
+through stdin. `--tools ""` remains in place so this review lane cannot edit
+files or run tools.
 
 ### Open auth/isolation decision
 
 Strict global `CLAUDE.md` isolation via `--bare` currently conflicts with
 individual-plan OAuth use unless Claude is configured with `ANTHROPIC_API_KEY`
-or an `apiKeyHelper`. If Switchyard must use OAuth, the Claude lane needs a
-new design decision: accept non-bare ambient user context, prove another
-flag/settings shape that suppresses global instructions while preserving OAuth,
-or adopt API-key/helper auth for strict isolation.
+or an `apiKeyHelper`. Phase 0 accepts non-bare ambient user context to prove
+the end-to-end loop. Later phases still need a design decision if strict Claude
+prompt isolation is required: prove another flag/settings shape that suppresses
+global instructions while preserving OAuth, or adopt API-key/helper auth for
+strict isolation.
 
 ## Full help output (verbatim)
 

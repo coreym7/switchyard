@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from importlib.resources import files
 
 import pytest
 
@@ -230,7 +231,7 @@ def test_run_claude_review_command_embeds_artifacts_and_required_flags(
     result = run_claude_review(task_packet, codex_plan, run_folder)
 
     assert result.success is True
-    assert "--bare" in captured_cmd
+    assert "--bare" not in captured_cmd
     assert captured_cmd[captured_cmd.index("--tools") + 1] == ""
     assert captured_cmd[captured_cmd.index("--model") + 1] == "haiku"
     assert "--max-budget-usd" in captured_cmd
@@ -238,6 +239,19 @@ def test_run_claude_review_command_embeds_artifacts_and_required_flags(
     assert "codex plan body" not in captured_cmd
     assert "task packet body" in captured_input[0]
     assert "codex plan body" in captured_input[0]
+
+
+def test_codex_plan_prompt_allows_read_only_inspection():
+    prompt_text = (
+        files("switchyard.prompts")
+        .joinpath("codex_plan.md")
+        .read_text(encoding="utf-8")
+    )
+
+    assert "There are no files to open and no tools to use" not in prompt_text
+    assert "inspect the target repository in read-only mode" in prompt_text
+    assert "Do not create or modify any files" in prompt_text
+    assert "Do not run write-capable shell commands" in prompt_text
 
 
 def test_run_claude_review_writes_stdout_to_artifact(tmp_path, monkeypatch):

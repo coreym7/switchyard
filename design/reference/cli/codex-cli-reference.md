@@ -78,11 +78,22 @@ For Phase 0 testing in a non-repo temp directory, add `--skip-git-repo-check`. R
 
 The `-o` output file is the key adapter choice — it gives Codex a clean place to write the artifact, separate from any stdout narration. This is structurally cleaner than what we have for Claude (where stdout *is* the artifact). Worth confirming in the probe whether `-o` writes only the final message or wraps it.
 
+Phase 0 follow-up on 2026-05-04 verified the implemented adapter shape:
+
+```text
+codex exec --ignore-user-config --ignore-rules --sandbox read-only --ephemeral --color never -C <target-repo> -o <artifact-path> -
+```
+
+The prompt is sent through stdin with `codex exec -`, and `-o` produced the
+final plan artifact. With the lane prompt updated to permit targeted read-only
+inspection, Codex inspected the target repository and referenced the actual
+`package.json` script `test` running `jest`.
+
 ## Outstanding probe-verifiable questions
 
-1. Can Switchyard safely create a Codex home that has auth material but no `AGENTS.md`? Empty alternate `CODEX_HOME` suppresses global instructions but fails real exec with `401 Unauthorized`.
+1. Can Switchyard safely create a Codex home that has auth material but no `AGENTS.md`? Answer for Phase 0: yes, copying `auth.json` into a managed `CODEX_HOME` was sufficient for real adapter runs while omitting managed-home `AGENTS.md`.
 2. Can project `AGENTS.md` discovery be avoided reliably by running from a harness-owned non-repo directory while passing only explicit artifact paths, or does that break useful repo access?
-3. Does `-o` capture only the final message, or include any wrapper / formatting? Claude's follow-up research says it writes the final message and still prints it to stdout; verify in the local probe before adapter implementation.
+3. Does `-o` capture only the final message, or include any wrapper / formatting? Answer for Phase 0: real adapter verification produced a clean markdown final-message artifact at `01-codex-plan.md`.
 4. Does Codex's stdout in `--ephemeral` mode emit narration, banners, or tool-call traces that Switchyard should ignore when `-o` is present?
 5. What cheap/current models are actually available to this account? Use `codex debug models` for the account catalog; `codex debug models --bundled` only shows the binary's bundled catalog.
 

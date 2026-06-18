@@ -33,7 +33,6 @@ def run_claude_review(
     cmd = [
         claude_exe,
         "-p",
-        "--bare",
         "--system-prompt-file",
         str(system_prompt_path),
         "--tools",

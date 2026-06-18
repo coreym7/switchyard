@@ -15,9 +15,9 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 
 ## Phase 0 Checklist
 
-- [ ] Confirm local CLI availability for Codex and Claude Code.
-- [ ] Capture exact non-interactive Codex command shape.
-- [ ] Capture exact non-interactive Claude command shape.
+- [x] Confirm local CLI availability for Codex and Claude Code.
+- [x] Capture exact non-interactive Codex command shape.
+- [x] Capture exact non-interactive Claude command shape.
 - [x] Define the Phase 0 task packet fields.
 - [x] Define run folder naming rules.
 - [x] Implement run context creation.
@@ -25,21 +25,21 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 - [x] Implement artifact filename constants.
 - [x] Implement artifact write helper.
 - [ ] Implement artifact read helper.
-- [ ] Implement base lane adapter result shape.
-- [ ] Implement Codex CLI adapter.
-- [ ] Implement Claude CLI adapter.
-- [ ] Implement `spike-adapters` workflow orchestration.
+- [x] Implement base lane adapter result shape.
+- [x] Implement Codex CLI adapter.
+- [x] Implement Claude CLI adapter.
+- [x] Implement `spike-adapters` workflow orchestration.
 - [x] Add tests for run context creation.
 - [x] Add tests for task packet rendering.
 - [x] Add tests for artifact write helper.
 - [ ] Add tests for artifact read helper.
-- [ ] Add tests for adapter result parsing or preservation.
+- [x] Add tests for adapter result parsing or preservation.
 - [x] Run the first real Codex -> Claude CLI spike.
 - [x] Record adapter findings in the design docs.
-- [ ] Decide Claude auth/isolation policy for individual-plan OAuth use.
-- [ ] Decide whether Phase 0 Codex planning may read target repo files.
+- [x] Decide Claude auth/isolation policy for individual-plan OAuth use.
+- [x] Decide whether Phase 0 Codex planning may read target repo files.
 
-## Phase 0 Design Calls (locked, pending implementation)
+## Phase 0 Design Calls
 
 - [x] Verify whether Codex CLI exposes a flag that suppresses loading of `AGENTS.md` (project + global). Current finding: no verified bypass flag; prompt isolation requires cwd/`CODEX_HOME` control or accepting ambient instructions.
 - [x] Verify Claude Code CLI flags that suppress loading of `CLAUDE.md` (project + global). Current finding: `--bare` plus `--system-prompt` / `--system-prompt-file` gives clean lane-prompt isolation, but `--bare` also disables OAuth/keychain auth and requires `ANTHROPIC_API_KEY` or `apiKeyHelper`.
@@ -50,11 +50,29 @@ task packet -> Codex plan -> Claude review -> adapter notes -> stop.
 
 ## Current Phase 0 Findings
 
-- Phase 0 adapter prompt transport now sends multi-line prompts over stdin and decodes subprocess output as UTF-8 with replacement.
+- Phase 0 adapter prompt transport sends multi-line prompts over stdin and decodes subprocess output as UTF-8 with replacement.
 - Real verification on 2026-05-04 against `c:\dev\project-profitability` no longer produced the old Codex one-line truncation refusal or a `UnicodeDecodeError`.
-- The verification did not fully satisfy the handoff expectation that Codex reference actual npm scripts: the current Codex lane prompt says there are no files to open and no tools to use, so Codex cannot inspect `package.json`.
-- Claude `--bare` failed under the user's individual-plan OAuth setup with `Not logged in - Please run /login`; this is expected from the captured CLI help because `--bare` does not read OAuth/keychain auth.
-- Non-bare `claude -p` worked in the initial probe, but that probe did not verify global `CLAUDE.md` isolation.
+- Codex planning now runs with `--sandbox read-only -C <target_repo>` and the lane prompt permits targeted read-only inspection before planning.
+- Real verification run `c:\dev\project-profitability\.switchyard\runs\2026-05-04-1509-document-the-npm-scripts-in-package` produced a Codex plan that referenced the actual `package.json` script: `test` running `jest`.
+- Claude review now drops `--bare` for Phase 0 so the user's individual-plan OAuth/keychain login works. This accepts possible ambient user/global Claude context as an MVP tradeoff; strict `CLAUDE.md` isolation remains later work.
+- The same real verification run produced `02-claude-review.md` with a `## Decision` section and `adapter-notes.md` showed both lanes succeeded. Claude's decision was `needs_revision` because of an ambiguity in the sample task packet, not because the adapter failed.
+
+## Adapter Playground
+
+Use the adjacent `agentic test area` repository as the preferred target for
+future real adapter verification runs. It should act as a disposable playground
+for command-run scenarios and checklist-driven cases, keeping `.switchyard/`
+run artifacts out of production or client-like repos.
+
+Good playground cases to keep available:
+
+- Simple documentation-only task.
+- Task that references a specific existing file.
+- Task that references a missing file.
+- Ambiguous task packet that should produce a Claude `needs_revision` decision.
+- Repo with package scripts or similar structured metadata for Codex to inspect.
+- Repo with ambient instruction files to test isolation assumptions.
+- Dirty worktree or failing-test scenarios for later phases.
 
 ## Repo Setup (deferred from initial review)
 

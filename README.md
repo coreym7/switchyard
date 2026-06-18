@@ -70,13 +70,19 @@ If either drops you into a browser or prompts for credentials, complete that flo
 
 ### Install Switchyard locally
 
-This repo is currently a scaffold — there is no installable CLI yet. Once Phase 0 is implemented, `pip install -e .` from the repo root will register the `switchyard` command.
+Install the local CLI from the repo root:
+
+```text
+pip install -e .
+```
+
+That registers the `switchyard` command for local testing.
 
 ## Current Status
 
-This repository currently contains design and scoping documents only. No production implementation exists yet.
+Phase 0 now has a working local adapter spike. The production workflow is still future work.
 
-The proposed first build target is **Phase 0: Adapter Spike**. That phase confirms and refines the documented CLI automation path:
+The implemented first build target is **Phase 0: Adapter Spike**. That phase confirms and refines the documented CLI automation path:
 
 ```text
 task packet
@@ -92,7 +98,17 @@ Switchyard captures the Claude artifact
 stop
 ```
 
-Phase 0 is not a blank feasibility investigation. Official CLI documentation already describes non-interactive automation modes for both Codex and Claude Code. The purpose of Phase 0 is to lock down the exact command shape, output handling, failure behavior, and artifact contract Switchyard should depend on.
+Phase 0 is not production workflow orchestration yet. It is the adapter proof:
+lock down command shape, prompt transport, output handling, failure behavior,
+and the artifact contract Switchyard should depend on.
+
+The latest verified run on 2026-05-04 against `c:\dev\project-profitability`
+confirmed:
+
+- Codex writes a concrete read-only plan artifact through `codex exec -` and `-o`.
+- The Codex plan referenced the actual `package.json` script `test` running `jest`.
+- Claude wrote a review artifact with a `## Decision` section using the user's existing OAuth login.
+- `adapter-notes.md` reported both lanes succeeded.
 
 ## Documentation Map
 
@@ -100,7 +116,7 @@ Phase 0 is not a blank feasibility investigation. Official CLI documentation alr
 - [design/implementation_skeleton.md](design/implementation_skeleton.md) names the initial package skeleton for the Phase 0 implementation.
 - [design/active-checklist.md](design/active-checklist.md) tracks the current implementation queue.
 - [design/reference/task-packet.md](design/reference/task-packet.md), [design/reference/run-artifacts.md](design/reference/run-artifacts.md), [design/reference/workflow-states.md](design/reference/workflow-states.md), [design/reference/configuration.md](design/reference/configuration.md), and [design/reference/guardrails-and-reporting.md](design/reference/guardrails-and-reporting.md) hold durable workflow reference details extracted from the original design draft.
-- [design/reference/cli/codex.md](design/reference/cli/codex.md) and [design/reference/cli/claude.md](design/reference/cli/claude.md) capture CLI reference findings relevant to Switchyard.
+- [design/reference/cli/codex-cli-reference.md](design/reference/cli/codex-cli-reference.md) and [design/reference/cli/claude-cli-reference.md](design/reference/cli/claude-cli-reference.md) capture CLI reference findings relevant to Switchyard.
 - [design/phase-0-cli-probe-findings.md](design/phase-0-cli-probe-findings.md) records Phase 0 adapter probe results.
 - [design/archive/switchyard_design_draft.md](design/archive/switchyard_design_draft.md) preserves the original source design draft for historical context.
 - [design/manual-instructions/AGENTS.md](design/manual-instructions/AGENTS.md) preserves the manual Codex implementation-agent rules.

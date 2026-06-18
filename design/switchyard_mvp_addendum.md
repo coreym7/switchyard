@@ -483,11 +483,13 @@ claude -p --bare --system-prompt-file <lane-prompt-file> ...
 
 However, `--bare` also disables OAuth/keychain auth. The 2026-05-04 real
 adapter run failed in this mode with `Not logged in - Please run /login` under
-the user's individual-plan OAuth setup. Non-bare `claude -p` worked in the
-initial probe, but that probe did not verify global `CLAUDE.md` isolation. The
-Claude lane therefore needs a follow-up design decision: strict isolation with
-API-key/helper auth, or OAuth-compatible execution with accepted ambient user
-context or another verified suppression mechanism.
+the user's individual-plan OAuth setup. Phase 0 therefore uses non-bare
+`claude -p --system-prompt-file <lane-prompt-file> --tools "" --model haiku
+--max-budget-usd 0.10` so the existing OAuth login works. This is an accepted
+MVP tradeoff: possible ambient user/global Claude context is allowed for the
+adapter spike. Later phases still need a design decision if strict Claude
+isolation is required: API-key/helper auth, or another verified OAuth-compatible
+suppression mechanism.
 
 Codex does not currently have an equivalent verified `AGENTS.md` bypass flag. `codex exec --help` exposes `--ignore-user-config` for `$CODEX_HOME/config.toml` and `--ignore-rules` for execpolicy `.rules` files, but neither is documented as an `AGENTS.md` bypass. OpenAI's current Codex agent-loop documentation describes global and project `AGENTS.md` aggregation as part of prompt construction, and local `codex debug prompt-input` testing confirmed that marker text from both `CODEX_HOME/AGENTS.md` and the working directory's `AGENTS.md` appears in the model-visible prompt.
 
@@ -505,6 +507,13 @@ Phase 0 chose the managed-home route for Codex. The 2026-05-04 real adapter
 run also found that prompt transport must use stdin on Windows: multi-line
 prompts passed through npm `.cmd` shims as positional argv can be truncated by
 `cmd.exe` reparsing. `codex exec -` plus stdin avoids that path.
+
+Phase 0 also chose read-only target-repo inspection for Codex planning:
+`--sandbox read-only -C <target_repo>` enforces no edits while allowing Codex to
+open relevant files before writing a concrete plan. A 2026-05-04 follow-up run
+against `c:\dev\project-profitability` produced a plan that referenced the
+actual `package.json` script `test` running `jest`, and Claude produced a review
+artifact with a `## Decision` section using non-bare OAuth-compatible execution.
 
 ---
 
